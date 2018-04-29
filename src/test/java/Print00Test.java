@@ -1,4 +1,4 @@
-import net.daporkchop.bedrock.Bedrock;
+import net.daporkchop.bedrock.ChunkPrinter;
 import org.junit.Test;
 
 /**
@@ -7,6 +7,6 @@ import org.junit.Test;
 public class Print00Test {
     @Test
     public void test() {
-        Bedrock.print_chunk_pattern(0L, 0L);
+        ChunkPrinter.print_chunk_pattern(0L, 0L);
     }
 }
