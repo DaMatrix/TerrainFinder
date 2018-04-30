@@ -13,14 +13,8 @@ import java.util.function.LongConsumer;
  * @author DaPorkchop_
  */
 public class Bedrock {
-    public static final boolean WILDCARDS = false;
-
     public static final byte WILDCARD = 2;
-    public static final ThreadLocal<byte[]> chunkPattern = ThreadLocal.withInitial(() -> new byte[256]);
-    public static final ThreadLocal<byte[]> chunkPattern_super = ThreadLocal.withInitial(() -> new byte[48 * 48]);
     public static final AtomicLong processedChunks = new AtomicLong(0L);
-    public static int sub_match_x = 0;
-    public static int sub_match_z = 0;
     public static String[] args;
 
     public Bedrock(int threads, String mode, LongConsumer update, long updateInterval, Callback callback) {

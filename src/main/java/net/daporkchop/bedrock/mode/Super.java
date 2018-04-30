@@ -1,6 +1,5 @@
 package net.daporkchop.bedrock.mode;
 
-import net.daporkchop.bedrock.Bedrock;
 import net.daporkchop.bedrock.Callback;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -9,6 +8,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author DaPorkchop_
  */
 public class Super {
+    public static final ThreadLocal<byte[]> chunkPattern_super = ThreadLocal.withInitial(() -> new byte[48 * 48]);
+
     public static boolean super_sub_chunk_match(byte[] sub, int rows, int cols, int x, int z) {
         byte[] bchunk = fill3x3(x, z);
 
@@ -24,9 +25,6 @@ public class Super {
                     }
                 }
                 if (match) {
-                    Bedrock.sub_match_x = m;
-                    Bedrock.sub_match_z = n;
-
                     return true;
                 }
             }
@@ -60,7 +58,7 @@ public class Super {
     }
 
     public static byte[] fill3x3(int x, int z) {
-        byte[] bchunk = Bedrock.chunkPattern_super.get();
+        byte[] bchunk = chunkPattern_super.get();
 
         for (int i = -1; i <= 1; i++) {
             for (int j = -1; j <= 1; j++) {

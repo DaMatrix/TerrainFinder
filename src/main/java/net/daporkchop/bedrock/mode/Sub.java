@@ -9,12 +9,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author DaPorkchop_
  */
 public class Sub {
+    public static final ThreadLocal<byte[]> chunkPattern = ThreadLocal.withInitial(() -> new byte[256]);
+
     public static boolean sub_chunk_match(byte[] sub, int rows, int cols, long x, long z) {
         Bedrock.processedChunks.incrementAndGet();
         long seed = ((
                 (x * 341873128712L + z * 132897987541L) ^ 0x5DEECE66DL)
                 * 709490313259657689L + 1748772144486964054L) & 281474976710655L;
-        byte[] chunk = Bedrock.chunkPattern.get();
+        byte[] chunk = chunkPattern.get();
 
         for (int a = 0; a < 16; a++) {
             for (int b = 0; b < 16; b++) {
@@ -40,9 +42,6 @@ public class Sub {
                     }
                 }
                 if (match) {
-                    Bedrock.sub_match_x = m;
-                    Bedrock.sub_match_z = n;
-
                     return true;
                 }
             }
