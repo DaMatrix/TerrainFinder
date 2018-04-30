@@ -30,7 +30,7 @@ public class ChunkPrinter {
         }
     }
 
-    public static void print_super_chunk_pattern(long x, long z) {
+    public static void print_super_chunk_pattern(int x, int z) {
         byte[] bchunk = Super.fill3x3(x, z);
 
         char[] buf = new char[49];

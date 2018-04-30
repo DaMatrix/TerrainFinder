@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author DaPorkchop_
  */
 public class Super {
-    public static boolean super_sub_chunk_match(byte[] sub, int rows, int cols, long x, long z) {
+    public static boolean super_sub_chunk_match(byte[] sub, int rows, int cols, int x, int z) {
         byte[] bchunk = fill3x3(x, z);
 
         boolean match;
@@ -59,7 +59,7 @@ public class Super {
         }
     }
 
-    public static byte[] fill3x3(long x, long z) {
+    public static byte[] fill3x3(int x, int z) {
         byte[] bchunk = Bedrock.chunkPattern_super.get();
 
         for (int i = -1; i <= 1; i++) {
