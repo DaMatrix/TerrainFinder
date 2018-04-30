@@ -1,6 +1,9 @@
 package net.daporkchop.bedrock.mode;
 
 import net.daporkchop.bedrock.Bedrock;
+import net.daporkchop.bedrock.Callback;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author DaPorkchop_
@@ -33,14 +36,14 @@ public class Full {
         return true;
     }
 
-    public static void bedrock_finder_fullpattern(byte[] pattern, int id, int step, int start, int end) {
-        for (int r = start + id; r <= end; r += step) {
-            for (int i = -r; i <= r; i++) {
+    public static void bedrock_finder_fullpattern(byte[] pattern, int id, int step, int start, int end, Callback callback, AtomicBoolean running) {
+        for (int r = start + id; running.get() && r <= end; r += step) {
+            for (int i = -r; running.get() && i <= r; i++) {
                 if (chunk_match(pattern, i, r)) {
-                    Bedrock.close(i << 4, r << 4);
+                    callback.onComplete(i << 4, r << 4);
                 }
                 if (chunk_match(pattern, i, -r)) {
-                    Bedrock.close(i << 4, (-r) << 4);
+                    callback.onComplete(i << 4, (-r) << 4);
                 }
             }
             /*for(int i = -r+1; i < r; i++) {

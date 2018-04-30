@@ -1,9 +1,13 @@
 package net.daporkchop.bedrock;
 
-import net.daporkchop.bedrock.mode.Full;
-import net.daporkchop.bedrock.mode.ISearchMode;
+import net.daporkchop.bedrock.gui.BedrockDialog;
+import net.daporkchop.bedrock.mode.Modes;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.LongConsumer;
 
 /**
  * @author DaPorkchop_
@@ -11,91 +15,98 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Bedrock {
     public static final boolean WILDCARDS = false;
 
-    public static final byte[] full_pattern = new byte[]{
-            1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0,
-            1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
-            1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0,
-            1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
-            0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0,
-            0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0,
-            0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1,
-            0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1,
-            1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0,
-            0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1,
-            0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0,
-            0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0
-    };
-    public static final byte[] sub_pattern = new byte[]{
-            0, 0, 1, 0, 0, 0, 1, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 1, 1, 0, 0, 0, 0,
-            0, 1, 1, 0, 0, 0, 0, 0,
-            0, 0, 0, 1, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 1, 0, 1,
-            1, 0, 0, 0, 1, 0, 0, 0,
-            0, 0, 1, 0, 0, 1, 0, 1
-    };
-    public static final byte[] any_pattern = new byte[]{
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 1, 0, 0, 0, 0,
-            0, 1, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 1, 0, 0, 0, 0,
-            0, 1, 1, 0, 0, 0, 0, 0,
-            0, 0, 0, 1, 1, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            1, 0, 1, 0, 0, 1, 0, 0
-    };
     public static final byte WILDCARD = 2;
     public static final ThreadLocal<byte[]> chunkPattern = ThreadLocal.withInitial(() -> new byte[256]);
     public static final ThreadLocal<byte[]> chunkPattern_super = ThreadLocal.withInitial(() -> new byte[48 * 48]);
-    public static final AtomicInteger processedChunks = new AtomicInteger(0);
+    public static final AtomicLong processedChunks = new AtomicLong(0L);
     public static int sub_match_x = 0;
     public static int sub_match_z = 0;
     public static String[] args;
 
-    public static void main(String... args) {
-        Bedrock.args = args;
+    public Bedrock(int threads, String mode, LongConsumer update, long updateInterval, Callback callback) {
+        this(null, threads, Modes.valueOf(mode.toUpperCase()), update, updateInterval, callback);
+    }
 
-        final int threads = getArgI(0, Runtime.getRuntime().availableProcessors());
-        final ISearchMode mode;
-
-        {
-            ISearchMode REEE = null;
-            final String modeText = getArg(1, "full");
-            switch (modeText) {
-                case "full":
-                    REEE = Full::bedrock_finder_fullpattern;
-                    break;
-                case "sub":
-                case "any":
-                default:
-                    throw new UnsupportedOperationException("Unimplemented mode: " + modeText);
-            }
-            mode = REEE;
+    public Bedrock(byte[] pattern, int threads, Modes mode, LongConsumer update, long updateInterval, Callback callback) {
+        if (mode == null) {
+            throw new IllegalArgumentException("Invalid mode!");
+        }
+        if (pattern == null) {
+            pattern = mode.def;
         }
 
-        for (int i = 0; i < threads; i++) {
-            final int REEE = i;
-            new Thread("Bedrock scanner #" + i) {
+        final Set<Thread> workers = new HashSet<>();
+        AtomicBoolean running = new AtomicBoolean(true);
+
+        {
+            final Callback ree = callback;
+
+            callback = (x, z) -> new Thread() {
                 @Override
                 public void run() {
-                    mode.run(full_pattern, REEE, threads, 0, 1875000);
+                    running.set(false);
+                    workers.forEach(Thread::stop);
+                    ree.onComplete(x, z);
+                    processedChunks.set(0);
+                    update.accept(0);
                 }
             }.start();
         }
 
-        while (true) {
+        {
+            final Callback cbk = callback;
+            final byte[] pat = pattern;
+
+            for (int i = 0; i < threads; i++) {
+                final int REEE = i;
+                workers.add(new Thread("Bedrock scanner #" + i) {
+                    @Override
+                    public void run() {
+                        mode.function.run(pat, REEE, threads, 0, 1875000, cbk, running);
+                    }
+                });
+            }
+            workers.forEach(Thread::start);
+        }
+
+        while (running.get()) {
             try {
-                Thread.sleep(10000);
+                Thread.sleep(updateInterval);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            System.out.println("Scanned " + processedChunks.get() + " chunks...");
+            update.accept(processedChunks.get());
         }
+    }
+
+    public static void main(String[] args) {
+        Bedrock.args = args;
+
+        if (args.length == 0) {
+            System.out.println("Usage:\n" +
+                    "java -jar bedrockscanner.jar [mode] [threads]\n" +
+                    "\n" +
+                    "Modes:\n" +
+                    "  full\n" +
+                    "  sub\n" +
+                    "  super\n" +
+                    "  gui");
+            return;
+        }
+
+        String mode = getArg(0, "gui");
+        if (mode.equals("gui")) {
+            BedrockDialog.main(args);
+            return;
+        }
+
+        new Bedrock(getArgI(1, Runtime.getRuntime().availableProcessors()), mode,
+                i -> System.out.println("Processed " + i + " chunks"), 10000L,
+                (x, z) -> {
+                    System.out.println("Found match at x=" + x + ", z=" + z);
+                    System.out.println("after scanning " + processedChunks.get() + " chunks");
+                    System.exit(0);
+                });
     }
 
     public static int getArgI(int index, int def) {
@@ -104,11 +115,5 @@ public class Bedrock {
 
     public static String getArg(int index, String def) {
         return index >= args.length ? def : args[index];
-    }
-
-    public static void close(int x, int z) {
-        System.out.println("Found pattern at x=" + x + ", z=" + z);
-        System.out.println("after scanning " + processedChunks.get() + " chunks");
-        System.exit(0);
     }
 }
