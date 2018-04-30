@@ -1,12 +1,15 @@
 package net.daporkchop.bedrock.mode;
 
 import net.daporkchop.bedrock.Bedrock;
+import net.daporkchop.bedrock.Callback;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author DaPorkchop_
  */
 public class Super {
-    public static boolean super_sub_chunk_match(byte[] sub, char rows, char cols, long x, long z) {
+    public static boolean super_sub_chunk_match(byte[] sub, int rows, int cols, long x, long z) {
         byte[] bchunk = fill3x3(x, z);
 
         boolean match;
@@ -30,6 +33,30 @@ public class Super {
         }
 
         return false;
+    }
+
+    public static void bedrock_finder_anypattern(byte[] pattern, int rows, int cols, int id, int step, int start, int end, Callback callback, AtomicBoolean running) {
+        for (int r = start + id; r <= end; r += step) {
+            for (int i = -r; i <= r; i++) {
+                if (super_sub_chunk_match(pattern, rows, cols, i, r)) {
+                    callback.onComplete(i << 4, r << 4);
+                }
+                if (super_sub_chunk_match(pattern, rows, cols, i, -r)) {
+                    callback.onComplete(i << 4, (-r) << 4);
+                }
+            }
+            for (int i = -r + 1; i < r; i++) {
+                if (super_sub_chunk_match(pattern, rows, cols, r, i)) {
+                    callback.onComplete(i << 4, r << 4);
+                }
+                if (super_sub_chunk_match(pattern, rows, cols, -r, i)) {
+                    callback.onComplete(i << 4, (-r) << 4);
+                }
+            }
+            if (!running.get()) {
+                return;
+            }
+        }
     }
 
     public static byte[] fill3x3(long x, long z) {

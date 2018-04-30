@@ -19,14 +19,15 @@ public class Full {
 
                 byte v = c[a * 16 + b];
 
-                if (Bedrock.WILDCARDS && v != Bedrock.WILDCARD) {
-                } else if (4 <= (seed >> 17) % 5) {
-                    if (c[a * 16 + b] != 1)
-                        // if a comparison fails, bail out
-                        return false;
-                } else {
-                    if (c[a * 16 + b] != 0)
-                        return false;
+                if (v != Bedrock.WILDCARD) {
+                    if (4 <= (seed >> 17) % 5) {
+                        if (c[a * 16 + b] != 1)
+                            // if a comparison fails, bail out
+                            return false;
+                    } else {
+                        if (c[a * 16 + b] != 0)
+                            return false;
+                    }
                 }
 
                 seed = seed * 5985058416696778513L + -8542997297661424380L;
@@ -37,8 +38,8 @@ public class Full {
     }
 
     public static void bedrock_finder_fullpattern(byte[] pattern, int id, int step, int start, int end, Callback callback, AtomicBoolean running) {
-        for (int r = start + id; running.get() && r <= end; r += step) {
-            for (int i = -r; running.get() && i <= r; i++) {
+        for (int r = start + id; r <= end; r += step) {
+            for (int i = -r; i <= r; i++) {
                 if (chunk_match(pattern, i, r)) {
                     callback.onComplete(i << 4, r << 4);
                 }
@@ -46,15 +47,17 @@ public class Full {
                     callback.onComplete(i << 4, (-r) << 4);
                 }
             }
-            /*for(int i = -r+1; i < r; i++) {
+            for (int i = -r + 1; i < r; i++) {
                 if (chunk_match(pattern, r, i)) {
-                    System.out.println("chunk: (" + i + ", " + r + "), real: (" + (i << 4) + ", " + (r << 4) + ")");
+                    callback.onComplete(i << 4, (-r) << 4);
                 }
                 if(chunk_match(pattern, i, -r)) {
-                    System.out.println("chunk: (" + i + ", " + -r + "), real: (" + (i << 4) + ", " + ((-r) << 4) + ")");
+                    callback.onComplete(i << 4, (-r) << 4);
                 }
-            }*/
-            //TODO: figure out what the point of this is
+            }
+            if (!running.get()) {
+                return;
+            }
         }
     }
 }

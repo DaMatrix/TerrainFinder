@@ -101,7 +101,7 @@ public class Bedrock {
         }
 
         new Bedrock(getArgI(1, Runtime.getRuntime().availableProcessors()), mode,
-                i -> System.out.println("Processed " + i + " chunks"), 10000L,
+                l -> System.out.println("Processed " + BedrockDialog.numberFormat.format(l) + " chunks"), 10000L,
                 (x, z) -> {
                     System.out.println("Found match at x=" + x + ", z=" + z);
                     System.out.println("after scanning " + processedChunks.get() + " chunks");

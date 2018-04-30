@@ -23,7 +23,7 @@ public enum Modes {
                     0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0,
                     0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0
             }),
-    SUB(8, null,
+    SUB(8, (pattern, id, step, start, end, callback, running) -> Sub.bedrock_finder_subpattern(pattern, 8, 8, id, step, start, end, callback, running),
             new byte[]{
                     0, 0, 1, 0, 0, 0, 1, 0,
                     0, 0, 0, 0, 0, 0, 0, 0,

@@ -1,12 +1,16 @@
 package net.daporkchop.bedrock.mode;
 
 import net.daporkchop.bedrock.Bedrock;
+import net.daporkchop.bedrock.Callback;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author DaPorkchop_
  */
 public class Sub {
-    public static boolean sub_chunk_match(byte[] sub, char rows, char cols, long x, long z) {
+    public static boolean sub_chunk_match(byte[] sub, int rows, int cols, long x, long z) {
+        Bedrock.processedChunks.incrementAndGet();
         long seed = (x * 341873128712L + z * 132897987541L) ^ 0x5DEECE66DL;
         byte[] chunk = Bedrock.chunkPattern.get();
 
@@ -45,5 +49,29 @@ public class Sub {
         }
 
         return false;
+    }
+
+    public static void bedrock_finder_subpattern(byte[] pattern, int rows, int cols, int id, int step, int start, int end, Callback callback, AtomicBoolean running) {
+        for (int r = start + id; r <= end; r += step) {
+            for (int i = -r; i <= r; i++) {
+                if (sub_chunk_match(pattern, rows, cols, i, r)) {
+                    callback.onComplete(i << 4, r << 4);
+                }
+                if (sub_chunk_match(pattern, rows, cols, i, -r)) {
+                    callback.onComplete(i << 4, (-r) << 4);
+                }
+            }
+            for (int i = -r + 1; i < r; i++) {
+                if (sub_chunk_match(pattern, rows, cols, r, i)) {
+                    callback.onComplete(i << 4, r << 4);
+                }
+                if (sub_chunk_match(pattern, rows, cols, -r, i)) {
+                    callback.onComplete(i << 4, (-r) << 4);
+                }
+            }
+            if (!running.get()) {
+                return;
+            }
+        }
     }
 }
