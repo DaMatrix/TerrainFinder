@@ -11,20 +11,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class Sub {
     public static boolean sub_chunk_match(byte[] sub, int rows, int cols, long x, long z) {
         Bedrock.processedChunks.incrementAndGet();
-        long seed = (x * 341873128712L + z * 132897987541L) ^ 0x5DEECE66DL;
+        long seed = ((
+                (x * 341873128712L + z * 132897987541L) ^ 0x5DEECE66DL)
+                * 709490313259657689L + 1748772144486964054L) & 281474976710655L;
         byte[] chunk = Bedrock.chunkPattern.get();
 
         for (int a = 0; a < 16; a++) {
             for (int b = 0; b < 16; b++) {
-                seed = (seed * 709490313259657689L + 1748772144486964054L) & 281474976710655L;
-
                 if (4 <= (seed >> 17) % 5) {
                     chunk[a * 16 + b] = 1;
                 } else {
                     chunk[a * 16 + b] = 0;
                 }
 
-                seed = seed * 5985058416696778513L + -8542997297661424380L;
+                seed = ((seed * 5985058416696778513L + -8542997297661424380L) * 709490313259657689L + 1748772144486964054L) & 281474976710655L;
             }
         }
 
@@ -61,14 +61,14 @@ public class Sub {
                     callback.onComplete(i << 4, (-r) << 4);
                 }
             }
-            for (int i = -r + 1; i < r; i++) {
+            /*for (int i = -r + 1; i < r; i++) {
                 if (sub_chunk_match(pattern, rows, cols, r, i)) {
                     callback.onComplete(i << 4, r << 4);
                 }
                 if (sub_chunk_match(pattern, rows, cols, -r, i)) {
                     callback.onComplete(i << 4, (-r) << 4);
                 }
-            }
+            }*/
             if (!running.get()) {
                 return;
             }

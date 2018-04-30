@@ -45,14 +45,14 @@ public class Super {
                     callback.onComplete(i << 4, (-r) << 4);
                 }
             }
-            for (int i = -r + 1; i < r; i++) {
+            /*for (int i = -r + 1; i < r; i++) {
                 if (super_sub_chunk_match(pattern, rows, cols, r, i)) {
                     callback.onComplete(i << 4, r << 4);
                 }
                 if (super_sub_chunk_match(pattern, rows, cols, -r, i)) {
                     callback.onComplete(i << 4, (-r) << 4);
                 }
-            }
+            }*/
             if (!running.get()) {
                 return;
             }
@@ -64,10 +64,11 @@ public class Super {
 
         for (int i = -1; i <= 1; i++) {
             for (int j = -1; j <= 1; j++) {
-                long seed = ((x + j) * 341873128712L + (z + i) * 132897987541L) ^ 0x5DEECE66DL;
+                long seed = ((
+                        ((x + j) * 341873128712L + (z + i) * 132897987541L) ^ 0x5DEECE66DL
+                ) * 709490313259657689L + 1748772144486964054L) & 281474976710655L;
                 for (int a = 0; a < 16; ++a) {
                     for (int b = 0; b < 16; ++b) {
-                        seed = seed * 709490313259657689L + 1748772144486964054L;
                         seed = seed & ((1L << 48L) - 1L);
 
                         if (4 <= (seed >> 17) % 5) {
@@ -76,7 +77,7 @@ public class Super {
                             bchunk[(16 * (i + 1) + a) * 48 + (16 * (j + 1) + b)] = 0;
                         }
 
-                        seed = seed * 5985058416696778513L + -8542997297661424380L;
+                        seed = ((seed * 5985058416696778513L + -8542997297661424380L) * 709490313259657689L + 1748772144486964054L) & 281474976710655L;
                     }
                 }
             }
