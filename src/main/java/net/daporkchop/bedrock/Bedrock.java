@@ -82,22 +82,24 @@ public class Bedrock {
     public static void main(String[] args) {
         Bedrock.args = args;
 
-        if (args.length == 0) {
-            System.out.println("Usage:\n" +
-                    "java -jar bedrockscanner.jar [mode] [threads]\n" +
-                    "\n" +
-                    "Modes:\n" +
-                    "  full\n" +
-                    "  sub\n" +
-                    "  super\n" +
-                    "  gui");
-            return;
-        }
-
         String mode = getArg(0, "gui");
-        if (mode.equals("gui")) {
-            BedrockDialog.main(args);
-            return;
+        switch (mode) {
+            case "gui":
+                BedrockDialog.main(args);
+                return;
+            case "help":
+            case "--help":
+            case "-h":
+            case "-help":
+                System.out.println("Usage:\n" +
+                        "java -jar bedrockscanner.jar [mode] [threads]\n" +
+                        "\n" +
+                        "Modes:\n" +
+                        "  full\n" +
+                        "  sub\n" +
+                        "  super\n" +
+                        "  gui");
+                return;
         }
 
         new Bedrock(getArgI(1, Runtime.getRuntime().availableProcessors()), mode,

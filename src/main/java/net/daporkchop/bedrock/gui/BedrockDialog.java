@@ -35,7 +35,7 @@ public class BedrockDialog extends JFrame {
     private Modes mode;
 
     {
-        $$$setupUI$$$();
+        setupUI();
     }
 
     public BedrockDialog() {
@@ -107,7 +107,7 @@ public class BedrockDialog extends JFrame {
         }
     }
 
-    private void $$$setupUI$$$() {
+    private void setupUI() {
         contentPane = new JPanel();
         contentPane.setLayout(new BorderLayout(0, 0));
         footer = new JPanel();
@@ -117,12 +117,15 @@ public class BedrockDialog extends JFrame {
         scannedCount.setText("0 chunks scanned");
         footer.add(scannedCount, BorderLayout.CENTER);
         actionButton = new JButton();
-        actionButton.setText("Button");
+        actionButton.setText("Start");
         footer.add(actionButton, BorderLayout.EAST);
         modeBox = new JComboBox();
         for (Modes mode : Modes.values()) {
             modeBox.addItem(mode);
         }
+        modeBox.setToolTipText("<html><strong>Full</strong>: Searches for a pattern in an entire chunk (fastest)<br>" +
+                "<strong>Sub</strong>: Searches for an 8x8 subpattern in a single chunk (slower)<br>" +
+                "<strong>Super</strong>: Searches for an 8x8 pattern that can overlap into neighboring chunks (slowest)</html>");
         footer.add(modeBox, BorderLayout.WEST);
         content = new JPanel();
         content.setLayout(new BorderLayout(0, 0));
@@ -131,10 +134,6 @@ public class BedrockDialog extends JFrame {
         mode = Modes.FULL;
         this.refreshTable();
         content.add(table, BorderLayout.CENTER);
-    }
-
-    public JComponent $$$getRootComponent$$$() {
-        return contentPane;
     }
 
     public class CheckBoxModel extends DefaultTableModel {

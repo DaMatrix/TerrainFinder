@@ -34,7 +34,7 @@ public enum Modes {
                     1, 0, 0, 0, 1, 0, 0, 0,
                     0, 0, 1, 0, 0, 1, 0, 1
             }),
-    SUPER(8, null,
+    SUPER(8, (pattern, id, step, start, end, callback, running) -> Super.bedrock_finder_anypattern(pattern, 8, 8, id, step, start, end, callback, running),
             new byte[]{
                     0, 0, 0, 0, 0, 0, 0, 0,
                     0, 0, 0, 1, 0, 0, 0, 0,
