@@ -21,11 +21,11 @@ public class Full {
 
                 if (v != Bedrock.WILDCARD) {
                     if (4 <= (seed >> 17) % 5) {
-                        if (c[a * 16 + b] != 1) {
+                        if (v != 1) {
                             return false;
                         }
                     } else {
-                        if (c[a * 16 + b] != 0) {
+                        if (v != 0) {
                             return false;
                         }
                     }
