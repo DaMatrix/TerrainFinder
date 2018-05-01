@@ -1,5 +1,6 @@
 package net.daporkchop.bedrock.mode;
 
+import net.daporkchop.bedrock.Bedrock;
 import net.daporkchop.bedrock.Callback;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -19,7 +20,8 @@ public class Super {
                 match = true;
                 for (int i = 0; match && i < rows; i++) {
                     for (int j = 0; match && j < cols; j++) {
-                        if (sub[i * cols + j] != bchunk[(m + i) * 48 + (n + j)]) {
+                        byte v = sub[i * cols + j];
+                        if (v != Bedrock.WILDCARD && v != bchunk[(m + i) * 48 + (n + j)]) {
                             match = false;
                         }
                     }

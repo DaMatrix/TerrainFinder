@@ -4,7 +4,6 @@ import net.daporkchop.bedrock.Bedrock;
 import net.daporkchop.bedrock.mode.Modes;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -12,7 +11,6 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.text.NumberFormat;
 import java.util.Locale;
-import java.util.Vector;
 
 public class BedrockDialog extends JFrame {
     public static final NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.US);
@@ -31,8 +29,8 @@ public class BedrockDialog extends JFrame {
     private JComboBox modeBox;
     private JPanel footer;
     private JPanel content;
-    private JTable table;
     private Modes mode;
+    private TriStateCheckBox[][] boxes;
 
     {
         setupUI();
@@ -69,13 +67,22 @@ public class BedrockDialog extends JFrame {
     }
 
     private void onAction() {
-        DefaultTableModel model = (DefaultTableModel) this.table.getModel();
         System.out.println("Starting search for mode " + mode);
         int size = mode.size;
         byte[] pattern = new byte[size * size];
         for (int x = 0; x < size; x++) {
             for (int z = 0; z < size; z++) {
-                pattern[x * size + z] = (boolean) model.getValueAt(x, z) ? (byte) 1 : 0;
+                int state = boxes[x][z].getSelectionState();
+                int a = state;
+                switch (a) {
+                    case 1:
+                        state = 2;
+                        break;
+                    case 2:
+                        state = 1;
+                        break;
+                }
+                pattern[x * size + z] = (byte) state;
             }
         }
 
@@ -95,16 +102,17 @@ public class BedrockDialog extends JFrame {
     }
 
     public void refreshTable() {
-        DefaultTableModel model = (DefaultTableModel) this.table.getModel();
-        model.setColumnCount(0);
-        model.setColumnCount(mode.size);
-        model.setNumRows(mode.size);
+        content.removeAll();
+        content.setLayout(new GridLayout(mode.size, mode.size));
+        boxes = new TriStateCheckBox[mode.size][mode.size];
 
         for (int x = 0; x < mode.size; x++) {
             for (int z = 0; z < mode.size; z++) {
-                model.setValueAt(Boolean.FALSE, x, z);
+                content.add(boxes[x][z] = new TriStateCheckBox());
             }
         }
+        revalidate();
+        repaint();
     }
 
     private void setupUI() {
@@ -128,30 +136,8 @@ public class BedrockDialog extends JFrame {
                 "<strong>Super</strong>: Searches for an 8x8 pattern that can overlap into neighboring chunks (slowest)</html>");
         footer.add(modeBox, BorderLayout.WEST);
         content = new JPanel();
-        content.setLayout(new BorderLayout(0, 0));
         contentPane.add(content, BorderLayout.CENTER);
-        table = new JTable(new CheckBoxModel());
         mode = Modes.FULL;
         this.refreshTable();
-        content.add(table, BorderLayout.CENTER);
-    }
-
-    public class CheckBoxModel extends DefaultTableModel {
-        @Override
-        public Class<?> getColumnClass(int columnIndex) {
-            return Boolean.class;
-        }
-
-        @Override
-        public boolean isCellEditable(int row, int column) {
-            return true;
-        }
-
-        @Override
-        public void setValueAt(Object aValue, int row, int column) {
-            Vector rowData = (Vector) getDataVector().get(row);
-            rowData.set(column, aValue);
-            fireTableCellUpdated(row, column);
-        }
     }
 }

@@ -36,7 +36,8 @@ public class Sub {
                 match = true;
                 for (int i = 0; match && i < rows; i++) {
                     for (int j = 0; match && j < cols; j++) {
-                        if (sub[i * cols + j] != chunk[(m + i) * 16 + (n + j)]) {
+                        byte v = sub[i * cols + j];
+                        if (v != Bedrock.WILDCARD && v != chunk[(m + i) * 16 + (n + j)]) {
                             match = false;
                         }
                     }

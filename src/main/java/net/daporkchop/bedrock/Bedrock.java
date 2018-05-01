@@ -35,16 +35,18 @@ public class Bedrock {
         {
             final Callback ree = callback;
 
-            callback = (x, z) -> new Thread() {
-                @Override
-                public void run() {
-                    running.set(false);
-                    workers.forEach(Thread::stop);
-                    ree.onComplete(x, z);
-                    processedChunks.set(0);
-                    update.accept(0);
-                }
-            }.start();
+            callback = (x, z) -> {
+                running.set(false);
+                new Thread() {
+                    @Override
+                    public void run() {
+                        workers.forEach(Thread::stop);
+                        ree.onComplete(x, z);
+                        processedChunks.set(0);
+                        update.accept(0);
+                    }
+                }.start();
+            };
         }
 
         {
