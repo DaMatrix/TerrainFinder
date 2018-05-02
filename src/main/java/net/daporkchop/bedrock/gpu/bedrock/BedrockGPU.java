@@ -2,127 +2,127 @@ package net.daporkchop.bedrock.gpu.bedrock;
 
 import net.daporkchop.bedrock.Callback;
 import net.daporkchop.bedrock.mode.Modes;
-import org.jocl.CL;
-import org.jocl.Pointer;
-import org.jocl.Sizeof;
-import org.jocl.cl_command_queue;
-import org.jocl.cl_context;
-import org.jocl.cl_context_properties;
-import org.jocl.cl_device_id;
-import org.jocl.cl_kernel;
-import org.jocl.cl_mem;
-import org.jocl.cl_platform_id;
-import org.jocl.cl_program;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.LWJGLException;
+import org.lwjgl.PointerBuffer;
+import org.lwjgl.opencl.CL;
+import org.lwjgl.opencl.CLCommandQueue;
+import org.lwjgl.opencl.CLContext;
+import org.lwjgl.opencl.CLContextCallback;
+import org.lwjgl.opencl.CLDevice;
+import org.lwjgl.opencl.CLKernel;
+import org.lwjgl.opencl.CLMem;
+import org.lwjgl.opencl.CLPlatform;
+import org.lwjgl.opencl.CLProgram;
+import org.lwjgl.opencl.Util;
 
+import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.jocl.CL.CL_CONTEXT_PLATFORM;
-import static org.jocl.CL.CL_DEVICE_TYPE_ALL;
-import static org.jocl.CL.CL_MEM_COPY_HOST_PTR;
-import static org.jocl.CL.CL_MEM_READ_ONLY;
-import static org.jocl.CL.CL_MEM_READ_WRITE;
-import static org.jocl.CL.clBuildProgram;
-import static org.jocl.CL.clCreateBuffer;
-import static org.jocl.CL.clCreateCommandQueue;
-import static org.jocl.CL.clCreateContext;
-import static org.jocl.CL.clCreateKernel;
-import static org.jocl.CL.clCreateProgramWithSource;
-import static org.jocl.CL.clGetDeviceIDs;
-import static org.jocl.CL.clGetPlatformIDs;
-import static org.jocl.CL.clSetKernelArg;
+import static jdk.nashorn.internal.objects.Global.print;
+import static org.lwjgl.opencl.CL10.CL_DEVICE_TYPE_CPU;
+import static org.lwjgl.opencl.CL10.CL_MEM_COPY_HOST_PTR;
+import static org.lwjgl.opencl.CL10.CL_MEM_READ_ONLY;
+import static org.lwjgl.opencl.CL10.CL_PROGRAM_BUILD_LOG;
+import static org.lwjgl.opencl.CL10.CL_QUEUE_PROFILING_ENABLE;
+import static org.lwjgl.opencl.CL10.clBuildProgram;
+import static org.lwjgl.opencl.CL10.clCreateBuffer;
+import static org.lwjgl.opencl.CL10.clCreateCommandQueue;
+import static org.lwjgl.opencl.CL10.clCreateKernel;
+import static org.lwjgl.opencl.CL10.clCreateProgramWithSource;
+import static org.lwjgl.opencl.CL10.clEnqueueNDRangeKernel;
+import static org.lwjgl.opencl.CL10.clEnqueueWriteBuffer;
+import static org.lwjgl.opencl.CL10.clFinish;
+import static org.lwjgl.opencl.CL10.clGetProgramBuildInfo;
 
 /**
  * @author DaPorkchop_
  */
 public class BedrockGPU {
-    private final int[] srcX, srcZ, dst, pattern;
-    private final cl_mem[] memObjects = new cl_mem[4];
-    private final cl_kernel kernel;
-    private final cl_command_queue commandQueue;
-    private final long[] global_work_size, local_work_size = new long[]{1};
-    private final Pointer dstPointer;
     private final int batchSize;
+    private final ByteBuffer pattern_buffer;
+    private CLKernel kernel;
+    private CLMem patternMem;
+    private CLCommandQueue queue;
 
-    public BedrockGPU(Modes mode, int batchSize, byte[] patternIn) {
+    public BedrockGPU(Modes mode, int batchSize, int[] full_pattern) {
         this.batchSize = batchSize;
-        global_work_size = new long[]{batchSize};
-        srcX = new int[batchSize];
-        srcZ = new int[batchSize];
-        dst = new int[batchSize];
-        pattern = new int[patternIn.length];
-        for (int i = 0; i < patternIn.length; i++) {
-            pattern[i] = patternIn[i] & 0xFF;
+        pattern_buffer = intToByteBuffer(full_pattern);
+
+        try {
+            CL.create();
+            CLPlatform platform = CLPlatform.getPlatforms().get(0);
+            List<CLDevice> devices = platform.getDevices(CL_DEVICE_TYPE_CPU);
+            CLContextCallback contextCB = new CLContextCallback() {
+                @Override
+                protected void handleMessage(String s, ByteBuffer byteBuffer) {
+                    System.err.println("cl_context_callback info: " + s);
+                }
+            };
+            CLContext context = CLContext.create(platform, devices, contextCB, null, null);
+            queue = clCreateCommandQueue(context, devices.get(0), CL_QUEUE_PROFILING_ENABLE, null);
+
+            patternMem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, pattern_buffer, null);
+            clEnqueueWriteBuffer(queue, patternMem, 1, 0, pattern_buffer, null, null);
+            final String bedrock_source = new Scanner(getClass().getResourceAsStream("/bedrock_full.cl"), "UTF-8").useDelimiter("\\A").next();
+            CLProgram program = clCreateProgramWithSource(context, bedrock_source, null);
+            int err = clBuildProgram(program, devices.get(0), "", null);
+            if (err != 0) {
+                printBuildLog(program, devices.get(0));
+                Util.checkCLError(err);
+            }
+            kernel = clCreateKernel(program, "sampleKernel", null);
+        } catch (LWJGLException e) {
+            e.printStackTrace();
+            System.exit(0);
         }
-
-        Pointer srcA = Pointer.to(srcX);
-        Pointer srcB = Pointer.to(srcZ);
-        dstPointer = Pointer.to(this.dst);
-        Pointer pattern = Pointer.to(this.pattern);
-
-        // The platform, device type and device number
-        // that will be used
-        final int platformIndex = 0;
-        final long deviceType = CL_DEVICE_TYPE_ALL;
-        final int deviceIndex = 0;
-
-        // Enable exceptions and subsequently omit error checks in this sample
-        CL.setExceptionsEnabled(true);
-
-        // Obtain the number of platforms
-        int numPlatformsArray[] = new int[1];
-        clGetPlatformIDs(0, null, numPlatformsArray);
-        int numPlatforms = numPlatformsArray[0];
-
-        // Obtain a platform ID
-        cl_platform_id platforms[] = new cl_platform_id[numPlatforms];
-        clGetPlatformIDs(platforms.length, platforms, null);
-        cl_platform_id platform = platforms[platformIndex];
-
-        // Initialize the context properties
-        cl_context_properties contextProperties = new cl_context_properties();
-        contextProperties.addProperty(CL_CONTEXT_PLATFORM, platform);
-
-        // Obtain the number of devices for the platform
-        int numDevicesArray[] = new int[1];
-        clGetDeviceIDs(platform, deviceType, 0, null, numDevicesArray);
-        int numDevices = numDevicesArray[0];
-
-        // Obtain a device ID
-        cl_device_id devices[] = new cl_device_id[numDevices];
-        clGetDeviceIDs(platform, deviceType, numDevices, devices, null);
-        cl_device_id device = devices[deviceIndex];
-
-        cl_context context = clCreateContext(contextProperties, 1, new cl_device_id[]{device}, null, null, null);
-
-        commandQueue = clCreateCommandQueue(context, device, 0, null);
-
-        memObjects[0] = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, Sizeof.cl_int * batchSize, srcA, null);
-        memObjects[1] = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, Sizeof.cl_int * batchSize, srcB, null);
-        memObjects[2] = clCreateBuffer(context, CL_MEM_READ_WRITE, Sizeof.cl_int * batchSize, null, null);
-        memObjects[3] = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, Sizeof.cl_int * batchSize, pattern, null);
-
-        cl_program program = clCreateProgramWithSource(context,
-                1, new String[]{new Scanner(getClass().getResourceAsStream("/bedrock_full.cl"), "UTF-8").useDelimiter("\\A").next()}, null, null);
-
-        // Build the program
-        clBuildProgram(program, 0, null, null, null, null);
-
-        // Create the kernel
-        kernel = clCreateKernel(program, "sampleKernel", null);
-
-        clSetKernelArg(kernel, 0, Sizeof.cl_mem, Pointer.to(memObjects[0]));
-        clSetKernelArg(kernel, 1, Sizeof.cl_mem, Pointer.to(memObjects[1]));
-        clSetKernelArg(kernel, 2, Sizeof.cl_mem, Pointer.to(memObjects[2]));
-        clSetKernelArg(kernel, 3, Sizeof.cl_mem, Pointer.to(memObjects[3]));
     }
 
     public static void main(String... args) {
-        BedrockGPU gpu = new BedrockGPU(null, 4, Modes.FULL.def);
-        gpu.scan(0, 1, 0, 1875000, (x, z) -> System.out.println("done! " + x + " " + z), new AtomicBoolean(true));
+        int[] pattern = new int[16 * 16];
+        for (int i = 0; i < pattern.length; i++) {
+            pattern[i] = Modes.FULL.def[i] & 0xFF;
+        }
+        BedrockGPU gpu = new BedrockGPU(null, 4, pattern);
+        gpu.scan(0, 16, 0, 1875000, (x, z) -> System.out.println("done! " + x + " " + z), new AtomicBoolean(true));
+    }
+
+    private static ByteBuffer intToByteBuffer(int[] ints) {
+        ByteBuffer buffer = BufferUtils.createByteBuffer(ints.length);
+        for (int i = 0; i < ints.length; i++) {
+            buffer.put(i, (byte) ints[i]);
+        }
+        return buffer;
+    }
+
+    private static void printBuildLog(CLProgram program, CLDevice device) {
+        PointerBuffer size = PointerBuffer.allocateDirect(1); // can only get value once or jvm will crash for some reason
+        clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, null, size); // get the length
+        ByteBuffer buffer = BufferUtils.createByteBuffer((int) size.get());
+        clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, buffer, null); // write to buffer
+        print(buffer);
     }
 
     public void scan(int id, int step, int start, int end, Callback callback, AtomicBoolean running) {
+        for (int r = start + id; r < end; r += step) {
+            for (int i = -r; i <= r; i++) {
+                run(i, r);
+                run(i, -r);
+            }
+        }
+    }
 
+    private void run(int x, int z) {
+        PointerBuffer bedrockWorkSize = BufferUtils.createPointerBuffer(1);
+        bedrockWorkSize.put(0, 1);
+
+        kernel.setArg(0, patternMem); // pattern
+        kernel.setArg(1, x); // start
+        kernel.setArg(2, z); // end
+        // execute kernel
+        clEnqueueNDRangeKernel(queue, kernel, 1, null, bedrockWorkSize, null, null, null);
+        clFinish(queue);
     }
 }
