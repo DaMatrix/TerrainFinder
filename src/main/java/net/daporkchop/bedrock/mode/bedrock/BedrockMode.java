@@ -40,7 +40,7 @@ public enum BedrockMode {
                     0, 0, 1, 0, 0, 1, 0, 1
             },
             "Searches for an 8x8 pattern in a single chunk (slower)"),
-    SUPER(8, Super::new,
+    ANY(8, Any::new,
             new byte[]{
                     0, 0, 0, 0, 0, 0, 0, 0,
                     0, 0, 0, 1, 0, 0, 0, 0,

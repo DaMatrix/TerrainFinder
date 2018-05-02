@@ -72,7 +72,7 @@ public class Bedrock {
                         "Modes:\n" +
                         "  full\n" +
                         "  sub\n" +
-                        "  super\n" +
+                        "  any\n" +
                         "  gui");
                 return;
         }

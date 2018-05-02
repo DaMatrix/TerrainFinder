@@ -1,6 +1,6 @@
 package net.daporkchop.bedrock;
 
-import net.daporkchop.bedrock.mode.bedrock.Super;
+import net.daporkchop.bedrock.mode.bedrock.Any;
 
 /**
  * @author DaPorkchop_
@@ -30,8 +30,8 @@ public class ChunkPrinter {
         }
     }
 
-    public static void print_super_chunk_pattern(int x, int z) {
-        byte[] bchunk = Super.fill3x3(x, z);
+    public static void print_3x3_chunk_pattern(int x, int z) {
+        byte[] bchunk = Any.fill3x3(x, z);
 
         char[] buf = new char[49];
         buf[48] = '\n';

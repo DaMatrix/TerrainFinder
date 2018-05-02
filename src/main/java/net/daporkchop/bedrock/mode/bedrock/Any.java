@@ -10,15 +10,15 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author DaPorkchop_
  */
-public class Super extends BedrockAlg {
-    private static final ThreadLocal<byte[]> chunkPattern_super = ThreadLocal.withInitial(() -> new byte[48 * 48]);
+public class Any extends BedrockAlg {
+    private static final ThreadLocal<byte[]> chunkPattern = ThreadLocal.withInitial(() -> new byte[48 * 48]);
 
-    public Super(@NonNull AtomicLong processed, @NonNull byte[] pattern, @NonNull Callback callback, int threads) {
+    public Any(@NonNull AtomicLong processed, @NonNull byte[] pattern, @NonNull Callback callback, int threads) {
         super(processed, pattern, callback, threads);
     }
 
     public static byte[] fill3x3(int x, int z) {
-        byte[] bchunk = chunkPattern_super.get();
+        byte[] bchunk = chunkPattern.get();
 
         for (int i = -1; i <= 1; i++) {
             for (int j = -1; j <= 1; j++) {
