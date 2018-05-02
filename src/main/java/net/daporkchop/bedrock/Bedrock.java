@@ -1,11 +1,12 @@
 package net.daporkchop.bedrock;
 
+import lombok.NonNull;
 import net.daporkchop.bedrock.gui.BedrockDialog;
-import net.daporkchop.bedrock.mode.Modes;
+import net.daporkchop.bedrock.mode.bedrock.BedrockAlg;
+import net.daporkchop.bedrock.mode.bedrock.BedrockMode;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongConsumer;
 
@@ -13,65 +14,55 @@ import java.util.function.LongConsumer;
  * @author DaPorkchop_
  */
 public class Bedrock {
-    public static final byte WILDCARD = 2;
-    public static final AtomicLong processedChunks = new AtomicLong(0L);
     public static String[] args;
 
     public Bedrock(int threads, String mode, LongConsumer update, long updateInterval, Callback callback) {
-        this(null, threads, Modes.valueOf(mode.toUpperCase()), update, updateInterval, callback);
+        this(null, threads, BedrockMode.valueOf(mode.toUpperCase()), update, updateInterval, callback);
     }
 
-    public Bedrock(byte[] pattern, int threads, Modes mode, LongConsumer update, long updateInterval, Callback callback) {
-        if (mode == null) {
-            throw new IllegalArgumentException("Invalid mode!");
-        }
+    public Bedrock(byte[] pattern, int threads, @NonNull BedrockMode mode, LongConsumer update, long updateInterval, Callback callback) {
         if (pattern == null) {
             pattern = mode.def;
         }
 
         final Set<Thread> workers = new HashSet<>();
-        AtomicBoolean running = new AtomicBoolean(true);
 
         {
             final Callback ree = callback;
 
-            callback = (x, z) -> {
-                running.set(false);
-                new Thread() {
-                    @Override
-                    public void run() {
-                        workers.forEach(Thread::stop);
-                        ree.onComplete(x, z);
-                        processedChunks.set(0);
-                        update.accept(0);
-                    }
-                }.start();
-            };
+            callback = (x, z, p) ->
+                    new Thread() {
+                        @Override
+                        public void run() {
+                            workers.forEach(Thread::stop);
+                            ree.onComplete(x, z, p);
+                            update.accept(0);
+                        }
+                    }.start();
         }
 
-        {
-            final Callback cbk = callback;
-            final byte[] pat = pattern;
+        final BedrockAlg alg = mode.function.newInstance(new AtomicLong(0), pattern, callback);
 
+        {
             for (int i = 0; i < threads; i++) {
                 final int REEE = i;
                 workers.add(new Thread("Bedrock scanner #" + i) {
                     @Override
                     public void run() {
-                        mode.function.run(pat, REEE, threads, 0, 1875000, cbk, running);
+                        alg.doSearch(REEE, threads);
                     }
                 });
             }
             workers.forEach(Thread::start);
         }
 
-        while (running.get()) {
+        while (alg.isRunning()) {
             try {
                 Thread.sleep(updateInterval);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            update.accept(processedChunks.get());
+            update.accept(alg.getProcessed().get());
         }
     }
 
@@ -100,9 +91,9 @@ public class Bedrock {
 
         new Bedrock(getArgI(1, Runtime.getRuntime().availableProcessors()), mode,
                 l -> System.out.println("Processed " + BedrockDialog.numberFormat.format(l) + " chunks"), 10000L,
-                (x, z) -> {
+                (x, z, p) -> {
                     System.out.println("Found match at x=" + x + ", z=" + z);
-                    System.out.println("after scanning " + processedChunks.get() + " chunks");
+                    System.out.println("after scanning " + p + " chunks");
                     System.exit(0);
                 });
     }

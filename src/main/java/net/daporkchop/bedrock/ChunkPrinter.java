@@ -1,6 +1,6 @@
 package net.daporkchop.bedrock;
 
-import net.daporkchop.bedrock.mode.Super;
+import net.daporkchop.bedrock.mode.bedrock.Super;
 
 /**
  * @author DaPorkchop_

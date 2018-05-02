@@ -1,7 +1,7 @@
 package net.daporkchop.bedrock.gpu.bedrock;
 
 import net.daporkchop.bedrock.Callback;
-import net.daporkchop.bedrock.mode.Modes;
+import net.daporkchop.bedrock.mode.bedrock.BedrockMode;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.PointerBuffer;
@@ -47,7 +47,7 @@ public class BedrockGPU {
     private CLMem patternMem;
     private CLCommandQueue queue;
 
-    public BedrockGPU(Modes mode, int batchSize, int[] full_pattern) {
+    public BedrockGPU(BedrockMode mode, int batchSize, int[] full_pattern) {
         this.batchSize = batchSize;
         pattern_buffer = intToByteBuffer(full_pattern);
 
@@ -83,10 +83,10 @@ public class BedrockGPU {
     public static void main(String... args) {
         int[] pattern = new int[16 * 16];
         for (int i = 0; i < pattern.length; i++) {
-            pattern[i] = Modes.FULL.def[i] & 0xFF;
+            pattern[i] = BedrockMode.FULL.def[i] & 0xFF;
         }
         BedrockGPU gpu = new BedrockGPU(null, 4, pattern);
-        gpu.scan(0, 16, 0, 1875000, (x, z) -> System.out.println("done! " + x + " " + z), new AtomicBoolean(true));
+        gpu.scan(0, 16, 0, 1875000, (x, z, p) -> System.out.println("done! " + x + " " + z), new AtomicBoolean(true));
     }
 
     private static ByteBuffer intToByteBuffer(int[] ints) {

@@ -1,7 +1,7 @@
 package net.daporkchop.bedrock.gui;
 
 import net.daporkchop.bedrock.Bedrock;
-import net.daporkchop.bedrock.mode.Modes;
+import net.daporkchop.bedrock.mode.bedrock.BedrockMode;
 
 import javax.swing.*;
 import java.awt.*;
@@ -29,7 +29,7 @@ public class BedrockDialog extends JFrame {
     private JComboBox modeBox;
     private JPanel footer;
     private JPanel content;
-    private Modes mode;
+    private BedrockMode mode;
     private TriStateCheckBox[][] boxes;
 
     {
@@ -50,7 +50,7 @@ public class BedrockDialog extends JFrame {
         modeBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent itemEvent) {
-                Modes newMode = (Modes) itemEvent.getItem();
+                BedrockMode newMode = (BedrockMode) itemEvent.getItem();
                 if (newMode != mode) {
                     mode = newMode;
                     System.out.println("Changed to " + newMode);
@@ -94,7 +94,7 @@ public class BedrockDialog extends JFrame {
                         mode,
                         l -> scannedCount.setText(numberFormat.format(l) + " chunks scanned"),
                         500L,
-                        (x, z) -> JOptionPane.showMessageDialog(null, "Found match at x=" + x + ", z=" + z));
+                        (x, z, p) -> JOptionPane.showMessageDialog(null, "Found match at x=" + x + ", z=" + z));
             }
         }
                 //;
@@ -128,7 +128,7 @@ public class BedrockDialog extends JFrame {
         actionButton.setText("Start");
         footer.add(actionButton, BorderLayout.EAST);
         modeBox = new JComboBox();
-        for (Modes mode : Modes.values()) {
+        for (BedrockMode mode : BedrockMode.values()) {
             modeBox.addItem(mode);
         }
         modeBox.setToolTipText("<html><strong>Full</strong>: Searches for a pattern in an entire chunk (fastest)<br>" +
@@ -137,7 +137,7 @@ public class BedrockDialog extends JFrame {
         footer.add(modeBox, BorderLayout.WEST);
         content = new JPanel();
         contentPane.add(content, BorderLayout.CENTER);
-        mode = Modes.FULL;
+        mode = BedrockMode.FULL;
         this.refreshTable();
     }
 }

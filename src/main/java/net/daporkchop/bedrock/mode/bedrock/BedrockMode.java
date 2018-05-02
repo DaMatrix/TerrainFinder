@@ -1,10 +1,12 @@
-package net.daporkchop.bedrock.mode;
+package net.daporkchop.bedrock.mode.bedrock;
 
 /**
+ * All supported search modes for bedrock patterns
+ *
  * @author DaPorkchop_
  */
-public enum Modes {
-    FULL(16, Full::bedrock_finder_fullpattern,
+public enum BedrockMode {
+    FULL(16, Full::new,
             new byte[]{
                     1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0,
                     1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
@@ -23,7 +25,7 @@ public enum Modes {
                     0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0,
                     0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0
             }),
-    SUB(8, (pattern, id, step, start, end, callback, running) -> Sub.bedrock_finder_subpattern(pattern, 8, 8, id, step, start, end, callback, running),
+    SUB(8, Sub::new,
             new byte[]{
                     0, 0, 1, 0, 0, 0, 1, 0,
                     0, 0, 0, 0, 0, 0, 0, 0,
@@ -34,7 +36,7 @@ public enum Modes {
                     1, 0, 0, 0, 1, 0, 0, 0,
                     0, 0, 1, 0, 0, 1, 0, 1
             }),
-    SUPER(8, (pattern, id, step, start, end, callback, running) -> Super.bedrock_finder_anypattern(pattern, 8, 8, id, step, start, end, callback, running),
+    SUPER(8, Super::new,
             new byte[]{
                     0, 0, 0, 0, 0, 0, 0, 0,
                     0, 0, 0, 1, 0, 0, 0, 0,
@@ -47,10 +49,10 @@ public enum Modes {
             });
 
     public final int size;
-    public final ISearchMode function;
+    public final BedrockConstructor function;
     public final byte[] def;
 
-    Modes(int size, ISearchMode function, byte[] def) {
+    BedrockMode(int size, BedrockConstructor function, byte[] def) {
         this.size = size;
         this.function = function;
         this.def = def;
