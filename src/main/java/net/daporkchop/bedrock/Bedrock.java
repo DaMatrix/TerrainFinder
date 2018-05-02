@@ -41,7 +41,7 @@ public class Bedrock {
                     }.start();
         }
 
-        BedrockAlg alg = mode.constructor.newInstance(new AtomicLong(0), pattern, callback, threads);
+        BedrockAlg alg = mode.constructor.newInstance(new AtomicLong(0), pattern, callback, threads, null);
         alg.start(false);
 
         while (alg.isRunning()) {
@@ -60,7 +60,7 @@ public class Bedrock {
         String mode = getArg(0, "gui");
         switch (mode) {
             case "gui":
-                BedrockDialog.main(args);
+                BedrockDialog.main();
                 return;
             case "help":
             case "--help":

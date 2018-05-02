@@ -2,6 +2,7 @@ package net.daporkchop.bedrock.mode.bedrock;
 
 import lombok.NonNull;
 import net.daporkchop.bedrock.Callback;
+import net.daporkchop.bedrock.util.RotationMode;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -13,8 +14,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Any extends BedrockAlg {
     private static final ThreadLocal<byte[]> chunkPattern = ThreadLocal.withInitial(() -> new byte[48 * 48]);
 
-    public Any(@NonNull AtomicLong processed, @NonNull byte[] pattern, @NonNull Callback callback, int threads) {
-        super(processed, pattern, callback, threads);
+    public Any(@NonNull AtomicLong processed, @NonNull byte[] pattern, @NonNull Callback callback, int threads, @NonNull RotationMode rotation) {
+        super(processed, pattern, callback, threads, rotation);
     }
 
     public static byte[] fill3x3(int x, int z) {
@@ -49,24 +50,42 @@ public class Any extends BedrockAlg {
         this.processed.incrementAndGet();
         byte[] bchunk = fill3x3(x, z);
 
-        boolean match;
-        for (int m = 0; m <= 40; m++) {
-            for (int n = 0; n <= 40; n++) {
-                match = true;
-                for (int i = 0; match && i < 8; i++) {
-                    for (int j = 0; match && j < 8; j++) {
-                        byte v = pattern[(i << 3) + j];
-                        if (v != WILDCARD && v != bchunk[(m + i) * 48 + (n + j)]) {
-                            match = false;
+        for (int r = 0; r < this.pattern.length; r++) {
+            byte[] pattern = this.pattern[r];
+            boolean match;
+            for (int m = 0; m <= 40; m++) {
+                for (int n = 0; n <= 40; n++) {
+                    match = true;
+                    for (int i = 0; match && i < 8; i++) {
+                        for (int j = 0; match && j < 8; j++) {
+                            byte v = pattern[(i << 3) + j];
+                            if (v != WILDCARD && v != bchunk[(m + i) * 48 + (n + j)]) {
+                                match = false;
+                            }
                         }
                     }
-                }
-                if (match) {
-                    return true;
+                    if (match) {
+                        return true;
+                    }
                 }
             }
         }
 
         return false;
+    }
+
+    @Override
+    protected int getSize() {
+        return 8;
+    }
+
+    @Override
+    protected int getMask() {
+        return 7;
+    }
+
+    @Override
+    protected int getShift() {
+        return 3;
     }
 }

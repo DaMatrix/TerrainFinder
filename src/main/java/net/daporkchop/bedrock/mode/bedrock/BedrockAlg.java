@@ -2,10 +2,12 @@ package net.daporkchop.bedrock.mode.bedrock;
 
 import lombok.AccessLevel;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import net.daporkchop.bedrock.Callback;
 import net.daporkchop.bedrock.util.AsyncTask;
+import net.daporkchop.bedrock.util.RotationMode;
 
 import java.util.ConcurrentModificationException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -39,7 +41,7 @@ public abstract class BedrockAlg {
      * where 0 <= x, z <= 15
      */
     @NonNull
-    protected final byte[] pattern;
+    protected final byte[] patternIn;
 
     /**
      * A constructor that will be invoked when a match is found.
@@ -55,6 +57,12 @@ public abstract class BedrockAlg {
     protected final int threads;
 
     /**
+     * The rotation mode to use
+     */
+    @NonNull
+    protected final RotationMode rotation;
+
+    /**
      * Whether or not this algorithm is running. When set to false, the algorithm should stop searching.
      */
     @Setter(AccessLevel.PRIVATE)
@@ -65,6 +73,13 @@ public abstract class BedrockAlg {
      */
     @Setter(AccessLevel.PRIVATE)
     protected transient volatile AsyncTask[] tasks;
+
+    /**
+     * The real pattern, with rotations (if any)
+     */
+    @Setter(AccessLevel.PRIVATE)
+    @Getter(AccessLevel.PRIVATE)
+    protected transient volatile byte[][] pattern;
 
     /**
      * Starts the search algorithm on the number of threads specified
@@ -83,6 +98,13 @@ public abstract class BedrockAlg {
 
         if (tasks == null) {
             tasks = new AsyncTask[this.threads];
+
+            this.pattern = new byte[this.rotation.rounds][];
+            for (int i = 0; i < this.pattern.length; i++) {
+                byte[] out = new byte[this.patternIn.length];
+                this.rotation.rotator.rotate(this.patternIn, out, getSize(), getMask(), getShift(), i);
+                this.pattern[i] = out;
+            }
         }
         for (int i = 0; i < this.threads; i++) {
             //"Variable 'i' is accessed from inner class, must be final or effectively final"
@@ -167,4 +189,10 @@ public abstract class BedrockAlg {
      * @return whether or not the given chunk is a match
      */
     protected abstract boolean scan(int x, int z);
+
+    protected abstract int getSize();
+
+    protected abstract int getMask();
+
+    protected abstract int getShift();
 }

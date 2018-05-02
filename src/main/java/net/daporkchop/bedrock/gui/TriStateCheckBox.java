@@ -107,7 +107,7 @@ public class TriStateCheckBox extends JCheckBox implements Icon, ActionListener 
                 tcb.getSelectionState() + 1);
 
         // test
-        System.out.println(">>>>IS SELECTED: " + tcb.isSelected());
-        System.out.println(">>>>IN MID STATE: " + (tcb.getSelectionState() == 1));
+        //System.out.println(">>>>IS SELECTED: " + tcb.isSelected());
+        //System.out.println(">>>>IN MID STATE: " + (tcb.getSelectionState() == 1));
     }
 }

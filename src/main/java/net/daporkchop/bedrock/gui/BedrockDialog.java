@@ -3,13 +3,12 @@ package net.daporkchop.bedrock.gui;
 import net.daporkchop.bedrock.mode.bedrock.BedrockAlg;
 import net.daporkchop.bedrock.mode.bedrock.BedrockMode;
 import net.daporkchop.bedrock.util.AsyncTask;
+import net.daporkchop.bedrock.util.RotationMode;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicLong;
@@ -28,18 +27,16 @@ public class BedrockDialog extends JFrame {
     private JPanel contentPane;
     private JLabel scannedCount;
     private JButton actionButton;
-    private JComboBox modeBox;
     private JPanel footer;
     private JPanel content;
-    private BedrockMode mode;
+    protected BedrockMode mode;
+    protected RotationMode rotationMode;
+    protected int threads = Runtime.getRuntime().availableProcessors();
     private TriStateCheckBox[][] boxes;
     private BedrockAlg alg;
 
-    {
-        setupUI();
-    }
-
     public BedrockDialog() {
+        setupUI();
         setDefaultCloseOperation(JDialog.EXIT_ON_CLOSE);
         setContentPane(contentPane);
         getRootPane().setDefaultButton(actionButton);
@@ -49,24 +46,12 @@ public class BedrockDialog extends JFrame {
                 onClick();
             }
         });
-
-        modeBox.addItemListener(new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent itemEvent) {
-                BedrockMode newMode = (BedrockMode) itemEvent.getItem();
-                if (newMode != mode) {
-                    mode = newMode;
-                    System.out.println("Changed to " + newMode);
-                    refreshTable();
-                }
-            }
-        });
+        this.pack();
+        this.setVisible(true);
     }
 
-    public static void main(String[] args) {
-        BedrockDialog dialog = new BedrockDialog();
-        dialog.pack();
-        dialog.setVisible(true);
+    public static void main() {
+        new BedrockDialog();
     }
 
     private synchronized void onClick() {
@@ -93,7 +78,14 @@ public class BedrockDialog extends JFrame {
             }
 
             final AtomicLong processed = new AtomicLong(0);
-            alg = mode.constructor.newInstance(processed, pattern, (x, z, p) -> JOptionPane.showMessageDialog(null, "Found match at x=" + x + ", z=" + z), Runtime.getRuntime().availableProcessors());
+            alg = mode.constructor.newInstance(
+                    processed,
+                    pattern,
+                    (x, z, p) -> {
+                        JOptionPane.showMessageDialog(null, "Found match at x=" + x + ", z=" + z);
+                    },
+                    this.threads,
+                    this.rotationMode);
 
             alg.start(false);
 
@@ -148,19 +140,18 @@ public class BedrockDialog extends JFrame {
         actionButton = new JButton();
         actionButton.setText("Start");
         footer.add(actionButton, BorderLayout.EAST);
-        modeBox = new JComboBox();
-        {
-            String s = "<html>";
-            for (BedrockMode mode : BedrockMode.values()) {
-                modeBox.addItem(mode);
-                s += "<strong>" + mode.name() + "</strong>: " + mode.desc + "<br>";
+        JButton optionsButton = new JButton();
+        optionsButton.setText("Options");
+        optionsButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                new BedrockOptionsDialog(BedrockDialog.this);
             }
-            modeBox.setToolTipText(s + "</html>");
-        }
-        footer.add(modeBox, BorderLayout.WEST);
+        });
+        footer.add(optionsButton, BorderLayout.WEST);
         content = new JPanel();
         contentPane.add(content, BorderLayout.CENTER);
         mode = BedrockMode.FULL;
+        rotationMode = RotationMode.NORTH;
         this.refreshTable();
     }
 }
