@@ -41,20 +41,8 @@ public class Bedrock {
                     }.start();
         }
 
-        final BedrockAlg alg = mode.function.newInstance(new AtomicLong(0), pattern, callback);
-
-        {
-            for (int i = 0; i < threads; i++) {
-                final int REEE = i;
-                workers.add(new Thread("Bedrock scanner #" + i) {
-                    @Override
-                    public void run() {
-                        alg.doSearch(REEE, threads);
-                    }
-                });
-            }
-            workers.forEach(Thread::start);
-        }
+        BedrockAlg alg = mode.constructor.newInstance(new AtomicLong(0), pattern, callback, threads);
+        alg.start(false);
 
         while (alg.isRunning()) {
             try {

@@ -13,8 +13,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Sub extends BedrockAlg {
     private final ThreadLocal<byte[]> chunkPattern = ThreadLocal.withInitial(() -> new byte[256]);
 
-    public Sub(@NonNull AtomicLong processed, @NonNull byte[] pattern, @NonNull Callback callback) {
-        super(processed, pattern, callback);
+    public Sub(@NonNull AtomicLong processed, @NonNull byte[] pattern, @NonNull Callback callback, int threads) {
+        super(processed, pattern, callback, threads);
     }
 
     @Override

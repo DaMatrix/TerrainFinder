@@ -13,8 +13,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Super extends BedrockAlg {
     private static final ThreadLocal<byte[]> chunkPattern_super = ThreadLocal.withInitial(() -> new byte[48 * 48]);
 
-    public Super(@NonNull AtomicLong processed, @NonNull byte[] pattern, @NonNull Callback callback) {
-        super(processed, pattern, callback);
+    public Super(@NonNull AtomicLong processed, @NonNull byte[] pattern, @NonNull Callback callback, int threads) {
+        super(processed, pattern, callback, threads);
     }
 
     public static byte[] fill3x3(int x, int z) {

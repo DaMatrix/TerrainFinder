@@ -1,5 +1,7 @@
 package net.daporkchop.bedrock.mode.bedrock;
 
+import net.daporkchop.bedrock.util.func.BedrockConstructor;
+
 /**
  * All supported search modes for bedrock patterns
  *
@@ -49,12 +51,12 @@ public enum BedrockMode {
             });
 
     public final int size;
-    public final BedrockConstructor function;
+    public final BedrockConstructor constructor;
     public final byte[] def;
 
-    BedrockMode(int size, BedrockConstructor function, byte[] def) {
+    BedrockMode(int size, BedrockConstructor constructor, byte[] def) {
         this.size = size;
-        this.function = function;
+        this.constructor = constructor;
         this.def = def;
     }
 }

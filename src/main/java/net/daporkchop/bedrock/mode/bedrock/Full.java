@@ -12,8 +12,8 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class Full extends BedrockAlg {
     //TODO: figure out if lombok can do this constructor for me
-    public Full(@NonNull AtomicLong processed, @NonNull byte[] pattern, @NonNull Callback callback) {
-        super(processed, pattern, callback);
+    public Full(@NonNull AtomicLong processed, @NonNull byte[] pattern, @NonNull Callback callback, int threads) {
+        super(processed, pattern, callback, threads);
     }
 
     @Override

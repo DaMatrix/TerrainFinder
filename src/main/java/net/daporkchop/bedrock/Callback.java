@@ -7,7 +7,7 @@ package net.daporkchop.bedrock;
  */
 public interface Callback {
     /**
-     * The callback function
+     * The callback constructor
      *
      * @param x         the BLOCK x coordinate
      * @param z         the BLOCK z coordinate

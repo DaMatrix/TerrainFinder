@@ -1,7 +1,8 @@
-package net.daporkchop.bedrock.mode.bedrock;
+package net.daporkchop.bedrock.util.func;
 
 import lombok.NonNull;
 import net.daporkchop.bedrock.Callback;
+import net.daporkchop.bedrock.mode.bedrock.BedrockAlg;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -11,5 +12,5 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author DaPorkchop_
  */
 public interface BedrockConstructor {
-    BedrockAlg newInstance(@NonNull AtomicLong processed, @NonNull byte[] pattern, @NonNull Callback callback);
+    BedrockAlg newInstance(@NonNull AtomicLong processed, @NonNull byte[] pattern, @NonNull Callback callback, int threads);
 }

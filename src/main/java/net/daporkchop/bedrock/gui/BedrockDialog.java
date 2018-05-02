@@ -1,7 +1,8 @@
 package net.daporkchop.bedrock.gui;
 
-import net.daporkchop.bedrock.Bedrock;
+import net.daporkchop.bedrock.mode.bedrock.BedrockAlg;
 import net.daporkchop.bedrock.mode.bedrock.BedrockMode;
+import net.daporkchop.bedrock.util.AsyncTask;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,6 +12,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.text.NumberFormat;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class BedrockDialog extends JFrame {
     public static final NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.US);
@@ -31,6 +33,7 @@ public class BedrockDialog extends JFrame {
     private JPanel content;
     private BedrockMode mode;
     private TriStateCheckBox[][] boxes;
+    private BedrockAlg alg;
 
     {
         setupUI();
@@ -43,7 +46,7 @@ public class BedrockDialog extends JFrame {
 
         actionButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                onAction();
+                onClick();
             }
         });
 
@@ -66,39 +69,57 @@ public class BedrockDialog extends JFrame {
         dialog.setVisible(true);
     }
 
-    private void onAction() {
-        System.out.println("Starting search for mode " + mode);
-        int size = mode.size;
-        byte[] pattern = new byte[size * size];
-        for (int x = 0; x < size; x++) {
-            for (int z = 0; z < size; z++) {
-                int state = boxes[x][z].getSelectionState();
-                int a = state;
-                switch (a) {
-                    case 1:
-                        state = 2;
-                        break;
-                    case 2:
-                        state = 1;
-                        break;
+    private synchronized void onClick() {
+        actionButton.setEnabled(false);
+        if (alg == null || !alg.isRunning()) {
+            actionButton.setText("Starting...");
+            System.out.println("Starting search for mode " + mode);
+            int size = mode.size;
+            byte[] pattern = new byte[size * size];
+            for (int x = 0; x < size; x++) {
+                for (int z = 0; z < size; z++) {
+                    int state = boxes[x][z].getSelectionState();
+                    int a = state;
+                    switch (a) {
+                        case 1:
+                            state = 2;
+                            break;
+                        case 2:
+                            state = 1;
+                            break;
+                    }
+                    pattern[x * size + z] = (byte) state;
                 }
-                pattern[x * size + z] = (byte) state;
             }
-        }
 
-        new Thread() {
-            @Override
-            public void run() {
-                new Bedrock(pattern,
-                        Runtime.getRuntime().availableProcessors(),
-                        mode,
-                        l -> scannedCount.setText(numberFormat.format(l) + " chunks scanned"),
-                        500L,
-                        (x, z, p) -> JOptionPane.showMessageDialog(null, "Found match at x=" + x + ", z=" + z));
-            }
+            final AtomicLong processed = new AtomicLong(0);
+            alg = mode.constructor.newInstance(processed, pattern, (x, z, p) -> JOptionPane.showMessageDialog(null, "Found match at x=" + x + ", z=" + z), Runtime.getRuntime().availableProcessors());
+
+            alg.start(false);
+
+            new AsyncTask("GUI updater worker",
+                    () -> {
+                        actionButton.setEnabled(true);
+                        while (alg.isRunning()) {
+                            actionButton.setText("Stop");
+                            try {
+                                Thread.sleep(100L);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            scannedCount.setText(numberFormat.format(processed.get()) + " chunks scanned");
+                        }
+                        actionButton.setText("Start");
+                    });
+        } else {
+            actionButton.setText("Stopping...");
+            new AsyncTask("Search stop thread",
+                    () -> {
+                        alg.stop(true);
+                        actionButton.setText("Start");
+                        actionButton.setEnabled(true);
+                    });
         }
-                //;
-                .start();
     }
 
     public void refreshTable() {
