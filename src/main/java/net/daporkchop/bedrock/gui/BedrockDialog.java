@@ -149,12 +149,14 @@ public class BedrockDialog extends JFrame {
         actionButton.setText("Start");
         footer.add(actionButton, BorderLayout.EAST);
         modeBox = new JComboBox();
-        for (BedrockMode mode : BedrockMode.values()) {
-            modeBox.addItem(mode);
+        {
+            String s = "<html>";
+            for (BedrockMode mode : BedrockMode.values()) {
+                modeBox.addItem(mode);
+                s += "<strong>" + mode.name() + "</strong>: " + mode.desc + "<br>";
+            }
+            modeBox.setToolTipText(s + "</html>");
         }
-        modeBox.setToolTipText("<html><strong>Full</strong>: Searches for a pattern in an entire chunk (fastest)<br>" +
-                "<strong>Sub</strong>: Searches for an 8x8 subpattern in a single chunk (slower)<br>" +
-                "<strong>Super</strong>: Searches for an 8x8 pattern that can overlap into neighboring chunks (slowest)</html>");
         footer.add(modeBox, BorderLayout.WEST);
         content = new JPanel();
         contentPane.add(content, BorderLayout.CENTER);
