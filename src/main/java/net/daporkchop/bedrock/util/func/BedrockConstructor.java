@@ -13,5 +13,5 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author DaPorkchop_
  */
 public interface BedrockConstructor {
-    BedrockAlg newInstance(@NonNull AtomicLong processed, @NonNull byte[] pattern, @NonNull Callback callback, int threads, @NonNull RotationMode rotation);
+    BedrockAlg newInstance(@NonNull byte[] pattern, @NonNull Callback callback, @NonNull RotationMode rotation, int threads);
 }

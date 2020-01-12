@@ -5,6 +5,7 @@ package net.daporkchop.bedrock;
  *
  * @author DaPorkchop_
  */
+@FunctionalInterface
 public interface Callback {
     /**
      * The callback constructor
@@ -12,6 +13,7 @@ public interface Callback {
      * @param x         the BLOCK x coordinate
      * @param z         the BLOCK z coordinate
      * @param processed the number of chunks searched
+     * @return whether or not to abort the search
      */
-    void onComplete(int x, int z, long processed);
+    boolean onComplete(int x, int z, long processed);
 }

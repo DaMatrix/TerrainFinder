@@ -1,12 +1,14 @@
 package net.daporkchop.bedrock;
 
+import lombok.experimental.UtilityClass;
 import net.daporkchop.bedrock.mode.bedrock.Any;
 
 /**
  * @author DaPorkchop_
  */
+@UtilityClass
 public class ChunkPrinter {
-    public static void print_chunk_pattern(long x, long z) {
+    public void print_chunk_pattern(long x, long z) {
         long seed = (x * 341873128712L + z * 132897987541L) ^ 0x5DEECE66DL;
 
         char[] buf = new char[17];
@@ -30,7 +32,7 @@ public class ChunkPrinter {
         }
     }
 
-    public static void print_3x3_chunk_pattern(int x, int z) {
+    public void print_3x3_chunk_pattern(int x, int z) {
         byte[] bchunk = Any.fill3x3(x, z);
 
         char[] buf = new char[49];

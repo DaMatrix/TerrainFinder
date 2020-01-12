@@ -3,6 +3,7 @@ package net.daporkchop.bedrock.mode.bedrock;
 import lombok.NonNull;
 import net.daporkchop.bedrock.Callback;
 import net.daporkchop.bedrock.util.RotationMode;
+import net.daporkchop.lib.unsafe.PUnsafe;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -12,15 +13,15 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author DaPorkchop_
  */
 public class Sub extends BedrockAlg {
-    private final ThreadLocal<byte[]> chunkPattern = ThreadLocal.withInitial(() -> new byte[256]);
+    private static final ThreadLocal<byte[]> chunkPattern = ThreadLocal.withInitial(() -> new byte[256]);
 
-    public Sub(@NonNull AtomicLong processed, @NonNull byte[] pattern, @NonNull Callback callback, int threads, @NonNull RotationMode rotation) {
-        super(processed, pattern, callback, threads, rotation);
+    public Sub(@NonNull byte[] pattern, @NonNull Callback callback, @NonNull RotationMode rotation, int threads) {
+        super(pattern, callback, rotation, threads);
     }
 
     @Override
     protected boolean scan(int x, int z) {
-        this.processed.incrementAndGet();
+        PUnsafe.getAndAddLong(this, PROCESSED_OFFSET, 1L);
         long seed = ((
                 (x * 341873128712L + z * 132897987541L) ^ 0x5DEECE66DL)
                 * 709490313259657689L + 1748772144486964054L) & 281474976710655L;
@@ -38,8 +39,8 @@ public class Sub extends BedrockAlg {
             }
         }
 
-        for (int r = 0; r < this.pattern.length; r++) {
-            byte[] pattern = this.pattern[r];
+        for (int r = 0; r < this.patterns.length; r++) {
+            byte[] pattern = this.patterns[r];
             boolean match;
             for (int m = 0; m <= 8; m++) {
                 for (int n = 0; n <= 8; n++) {

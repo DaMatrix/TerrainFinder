@@ -2,11 +2,21 @@ package net.daporkchop.bedrock.gui;
 
 import net.daporkchop.bedrock.mode.bedrock.BedrockAlg;
 import net.daporkchop.bedrock.mode.bedrock.BedrockMode;
-import net.daporkchop.bedrock.util.AsyncTask;
 import net.daporkchop.bedrock.util.RotationMode;
+import net.daporkchop.lib.common.system.OperatingSystem;
+import net.daporkchop.lib.common.system.PlatformInfo;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+import java.awt.BorderLayout;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.NumberFormat;
@@ -24,16 +34,16 @@ public class BedrockDialog extends JFrame {
         }
     }
 
-    private JPanel contentPane;
-    private JLabel scannedCount;
-    private JButton actionButton;
-    private JPanel footer;
-    private JPanel content;
-    protected BedrockMode mode;
+    private   JPanel       contentPane;
+    private   JLabel       scannedCount;
+    private   JButton      actionButton;
+    private   JPanel       footer;
+    private   JPanel       content;
+    protected BedrockMode  mode;
     protected RotationMode rotationMode;
     protected int threads = Runtime.getRuntime().availableProcessors();
     private TriStateCheckBox[][] boxes;
-    private BedrockAlg alg;
+    private BedrockAlg           alg;
 
     public BedrockDialog() {
         setupUI();
@@ -51,6 +61,14 @@ public class BedrockDialog extends JFrame {
     }
 
     public static void main() {
+        if (PlatformInfo.OPERATING_SYSTEM != OperatingSystem.Windows) {
+            //the hacky "TriStateCheckBox" thing looks broken on GTK+
+            try {
+                UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
         new BedrockDialog();
     }
 
@@ -77,40 +95,35 @@ public class BedrockDialog extends JFrame {
                 }
             }
 
-            final AtomicLong processed = new AtomicLong(0);
-            alg = mode.constructor.newInstance(
-                    processed,
+            this.alg = this.mode.constructor.newInstance(
                     pattern,
                     (x, z, p) -> {
-                        JOptionPane.showMessageDialog(null, "Found match at x=" + x + ", z=" + z);
+                        SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(null, "Found match at x=" + x + ", z=" + z + "(chunk: x=" + (x >> 4) + ", z=" + (z >> 4) + ")"));
+                        return true;
                     },
-                    this.threads,
-                    this.rotationMode);
+                    this.rotationMode,
+                    this.threads);
 
-            alg.start(false);
-
-            new AsyncTask("GUI updater worker",
-                    () -> {
-                        actionButton.setEnabled(true);
-                        while (alg.isRunning()) {
-                            actionButton.setText("Stop");
-                            try {
-                                Thread.sleep(100L);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            scannedCount.setText(numberFormat.format(processed.get()) + " chunks scanned");
-                        }
-                        actionButton.setText("Start");
-                    });
+            new Thread(() -> {
+                actionButton.setEnabled(true);
+                while (alg.isRunning()) {
+                    actionButton.setText("Stop");
+                    try {
+                        Thread.sleep(100L);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    scannedCount.setText(numberFormat.format(alg.getProcessed()) + " chunks scanned");
+                }
+                actionButton.setText("Start");
+            }, "GUI updater worker").start();
         } else {
             actionButton.setText("Stopping...");
-            new AsyncTask("Search stop thread",
-                    () -> {
-                        alg.stop(true);
-                        actionButton.setText("Start");
-                        actionButton.setEnabled(true);
-                    });
+            new Thread(() -> {
+                alg.stop(true);
+                actionButton.setText("Start");
+                actionButton.setEnabled(true);
+            }, "Search stop thread").start();
         }
     }
 

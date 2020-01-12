@@ -4,8 +4,6 @@
 
 A port of ChromeChrusher's bedrock pattern finder to Java, with a few optimizations, and a fancy GUI.
 
-Also WIP support for OpenCL, and planned features include a texture rotation finder
-
 ### Dependency management
 
 #### Maven
@@ -25,7 +23,7 @@ Dependency:
 <dependency>
     <groupId>net.daporkchop</groupId>
     <artifactId>bedrock</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.5</version>
 </dependency>
 ```
 
@@ -35,12 +33,12 @@ Add the repository:
 
 ```groovy
 maven { 
-    url 'http://maven.daporkchop.net/'
+    url "https://maven.daporkchop.net/"
 }
 ```
 
 Dependency:
 
 ```groovy
-compile 'net.daporkchop:bedrock:0.0.1'
+compile "net.daporkchop:bedrock:0.0.5"
 ```

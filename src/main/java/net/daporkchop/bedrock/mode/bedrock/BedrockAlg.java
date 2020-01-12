@@ -1,22 +1,23 @@
 package net.daporkchop.bedrock.mode.bedrock;
 
 import lombok.AccessLevel;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import net.daporkchop.bedrock.Callback;
-import net.daporkchop.bedrock.util.AsyncTask;
 import net.daporkchop.bedrock.util.RotationMode;
+import net.daporkchop.lib.unsafe.PUnsafe;
 
-import java.util.ConcurrentModificationException;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * @author DaPorkchop_
  */
-@Data
+@Getter
+@Setter
 public abstract class BedrockAlg {
+    protected static final long PROCESSED_OFFSET = PUnsafe.pork_getOffset(BedrockAlg.class, "processed");
+
     /**
      * The maximum search radius. This default value (1875000) will scan the whole world.
      */
@@ -31,30 +32,15 @@ public abstract class BedrockAlg {
     /**
      * A counter for processed chunks. Incremented every time a chunk is scanned
      */
-    @NonNull
-    protected final AtomicLong processed;
-
-    /**
-     * The pattern we're scanning for.
-     * Indexed as in:
-     * (x << 4) | z
-     * where 0 <= x, z <= 15
-     */
-    @NonNull
-    protected final byte[] patternIn;
+    @Setter(AccessLevel.NONE)
+    protected volatile long processed = 0L;
 
     /**
      * A constructor that will be invoked when a match is found.
-     * By default this should somehow or other also terminate the workers
-     * //TODO: automatic worker termination in this class
+     * By default this should somehow or other also terminate the workers.
      */
     @NonNull
     protected final Callback callback;
-
-    /**
-     * The number of threads to start
-     */
-    protected final int threads;
 
     /**
      * The rotation mode to use
@@ -63,68 +49,59 @@ public abstract class BedrockAlg {
     protected final RotationMode rotation;
 
     /**
-     * Whether or not this algorithm is running. When set to false, the algorithm should stop searching.
-     */
-    @Setter(AccessLevel.PRIVATE)
-    protected transient volatile boolean running = false;
-
-    /**
      * All worker threads
      */
     @Setter(AccessLevel.PRIVATE)
-    protected transient volatile AsyncTask[] tasks;
+    protected volatile Thread[] tasks;
 
     /**
      * The real pattern, with rotations (if any)
      */
-    @Setter(AccessLevel.PRIVATE)
-    @Getter(AccessLevel.PRIVATE)
-    protected transient volatile byte[][] pattern;
+    @Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.NONE)
+    protected final byte[][] patterns;
+
+    protected final CountDownLatch latch;
 
     /**
-     * Starts the search algorithm on the number of threads specified
-     * in the constructor
-     *
-     * @param blocking if true, this will block the invoking thread until the search is complete. if not,
-     *                 it will start the worker threads and return
-     * @return if blocking it will return true when search is complete (unless an error occurs, in which case it returns false), if not blocking it will return false
+     * The number of threads to start
      */
-    public synchronized boolean start(boolean blocking) {
-        if (this.running) {
-            throw new ConcurrentModificationException("Cannot start search while another one is running");
-        } else {
-            this.running = true;
-        }
+    protected final int threads;
 
-        if (tasks == null) {
-            tasks = new AsyncTask[this.threads];
+    /**
+     * Whether or not this algorithm is running. When set to false, the algorithm should stop searching.
+     */
+    @Setter(AccessLevel.PRIVATE)
+    protected volatile boolean running = true;
 
-            this.pattern = new byte[this.rotation.rounds][];
-            for (int i = 0; i < this.pattern.length; i++) {
-                byte[] out = new byte[this.patternIn.length];
-                this.rotation.rotator.rotate(this.patternIn, out, getSize(), getMask(), getShift(), i);
-                this.pattern[i] = out;
-            }
+    public BedrockAlg(@NonNull byte[] pattern, @NonNull Callback callback, @NonNull RotationMode rotation, int threads) {
+        this.callback = callback;
+        this.rotation = rotation;
+        this.threads = threads;
+        this.latch = new CountDownLatch(threads);
+        this.tasks = new Thread[threads];
+
+        this.patterns = new byte[this.rotation.rounds][pattern.length];
+        for (int i = 0; i < this.patterns.length; i++) {
+            this.rotation.rotate(pattern, this.patterns[i], this.getSize(), this.getMask(), this.getShift(), i);
         }
         for (int i = 0; i < this.threads; i++) {
             //"Variable 'i' is accessed from inner class, must be final or effectively final"
             //dammit java this has been an issue forever
             final int id = i;
-            this.tasks[i] = new AsyncTask("Bedrock search worker #" + i, () -> doSearch(id));
+            this.tasks[i] = new Thread(() -> this.doSearch(id), "Bedrock search worker #" + i);
         }
+        for (int i = 0; i < this.threads; i++) {
+            this.tasks[i].start();
+        }
+    }
 
-        if (blocking) {
-            try {
-                while (running) {
-                    Thread.sleep(25);
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                return false;
-            }
-            return true;
+    public void await() {
+        try {
+            this.latch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        return false;
     }
 
     /**
@@ -134,21 +111,11 @@ public abstract class BedrockAlg {
      */
     public void stop(boolean blocking) {
         this.running = false;
+        for (Thread thread : this.tasks) {
+            thread.interrupt();
+        }
         if (blocking) {
-            try {
-                while (running) {
-                    Thread.sleep(25);
-                    boolean running = false;
-                    for (AsyncTask task : this.tasks) {
-                        running |= !task.complete;
-                    }
-                    if (!running) {
-                        return;
-                    }
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            this.await();
         }
     }
 
@@ -158,13 +125,16 @@ public abstract class BedrockAlg {
      * @param id the id of this worker thread (0-max)
      */
     protected void doSearch(int id) {
-        for (int r = id; running && r <= END; r += this.threads) {
-            for (int i = -r; running && i <= r; i++) {
-                if (scan(i, r)) {
-                    onMatch(i, r);
+        for (int r = id; r <= END; r += this.threads) {
+            for (int i = -r; i <= r; i++) {
+                if (this.scan(i, r)) {
+                    this.onMatch(i, r);
                 }
-                if (scan(i, -r)) {
-                    onMatch(i, -r);
+                if (this.scan(i, -r)) {
+                    this.onMatch(i, -r);
+                }
+                if (Thread.interrupted() && !this.running) {
+                    return;
                 }
             }
         }
@@ -177,8 +147,9 @@ public abstract class BedrockAlg {
      * @param z the chunk's z coordinate
      */
     protected void onMatch(int x, int z) {
-        running = false;
-        callback.onComplete(x << 4, z << 4, this.processed.get());
+        if (this.callback.onComplete(x << 4, z << 4, this.processed)) {
+            this.stop(false);
+        }
     }
 
     /**
