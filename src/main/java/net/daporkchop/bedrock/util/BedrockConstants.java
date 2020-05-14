@@ -11,8 +11,8 @@ import static net.daporkchop.lib.common.math.PMath.*;
  */
 @UtilityClass
 public class BedrockConstants {
-    public static final int TILE_SIZE = 16; //the size of a tile in chunks
-    public static final int TILE_BITS = 4;
+    public static final int TILE_SIZE = 4; //the size of a tile in chunks
+    public static final int TILE_BITS = BinMath.getNumBitsNeededFor(TILE_SIZE);
 
     public static final int WORLD_RADIUS = 30000000 >> 4 >> TILE_BITS; //the radius of the world in tiles
     public static final long WHOLE_WORLD_CAP = ((long) WORLD_RADIUS * WORLD_RADIUS) << 2L;

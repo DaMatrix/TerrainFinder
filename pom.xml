@@ -24,7 +24,7 @@
     <dependencies>
         <dependency>
             <groupId>net.daporkchop.lib</groupId>
-            <artifactId>common</artifactId>
+            <artifactId>concurrent</artifactId>
             <version>0.5.5-SNAPSHOT</version>
         </dependency>
         <dependency>
