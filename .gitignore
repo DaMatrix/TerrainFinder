@@ -1,7 +1,16 @@
-/.idea/
+# Gradle files
+.gradle/
+build/
+
+# IntelliJ files
+.idea/
 *.iml
 *.ipr
+out/
+run/
+
+# misc.
 *.class
-*.jar
-target/
-/run/
+*.log
+
+dependency-reduced-pom.xml

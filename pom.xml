@@ -6,7 +6,7 @@
 
     <groupId>net.daporkchop</groupId>
     <artifactId>bedrock</artifactId>
-    <version>0.0.5</version>
+    <version>1.0.0-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -25,7 +25,7 @@
         <dependency>
             <groupId>net.daporkchop.lib</groupId>
             <artifactId>common</artifactId>
-            <version>0.5.0-SNAPSHOT</version>
+            <version>0.5.5-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -55,16 +55,16 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>com.googlecode.mavennatives</groupId>
-                <artifactId>maven-nativedependencies-plugin</artifactId>
-                <version>0.0.6</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.1</version>
+                <configuration>
+                </configuration>
                 <executions>
                     <execution>
-                        <id>unpacknatives</id>
-                        <phase>generate-resources</phase>
+                        <phase>package</phase>
                         <goals>
-                            <!--suppress MavenModelInspection (this line is for IDEA)-->
-                            <goal>copy</goal>
+                            <goal>shade</goal>
                         </goals>
                     </execution>
                 </executions>
