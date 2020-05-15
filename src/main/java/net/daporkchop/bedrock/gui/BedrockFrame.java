@@ -168,49 +168,51 @@ public class BedrockFrame extends JFrame {
             }
         }
 
-        switch (this.mode)  {
-            case FULL: {
-                long state = seedBedrock(123, -456);
-                for (int x = 0; x < 16; x++) {
-                    for (int z = 0; z < 16; z++) {
-                        this.boxes[x][z].setSelectionState(flagBedrock(state) << 1);
-                        state = Constants.updateBedrock(state);
+        if (true)   {
+            switch (this.mode)  {
+                case FULL: {
+                    long state = seedBedrock(123, -456);
+                    for (int x = 0; x < 16; x++) {
+                        for (int z = 0; z < 16; z++) {
+                            this.boxes[x][z].setSelectionState(flagBedrock(state) << 1);
+                            state = Constants.updateBedrock(state);
+                        }
                     }
                 }
-            }
-            break;
-            case SUB: {
-                int[] grid = {0,0,1,0,0,0,1,0,
-                        0,0,0,0,0,0,0,0,
-                        0,0,1,1,0,0,0,0,
-                        0,1,1,0,0,0,0,0,
-                        0,0,0,1,0,0,0,0,
-                        0,0,0,0,0,1,0,1,
-                        1,0,0,0,1,0,0,0,
-                        0,0,1,0,0,1,0,1};
-                for (int x = 0, i = 0; x < 8; x++) {
-                    for (int z = 0; z < 8; z++) {
-                        this.boxes[x][z].setSelectionState(grid[i++] << 1);
+                break;
+                case SUB: {
+                    int[] grid = {0,0,1,0,0,0,1,0,
+                            0,0,0,0,0,0,0,0,
+                            0,0,1,1,0,0,0,0,
+                            0,1,1,0,0,0,0,0,
+                            0,0,0,1,0,0,0,0,
+                            0,0,0,0,0,1,0,1,
+                            1,0,0,0,1,0,0,0,
+                            0,0,1,0,0,1,0,1};
+                    for (int x = 0, i = 0; x < 8; x++) {
+                        for (int z = 0; z < 8; z++) {
+                            this.boxes[x][z].setSelectionState(grid[i++] << 1);
+                        }
                     }
                 }
-            }
-            break;
-            /*case ANY: {
-                int[] grid = {0,0,0,0,0,0,0,0,
-                        0,0,0,1,0,0,0,0,
-                        0,1,0,0,0,0,0,0,
-                        0,0,0,1,0,0,0,0,
-                        0,1,1,0,0,0,0,0,
-                        0,0,0,1,1,0,0,0,
-                        0,0,0,0,0,0,0,0,
-                        1,0,1,0,0,1,0,0};
-                for (int x = 0, i = 0; x < 8; x++) {
-                    for (int z = 0; z < 8; z++) {
-                        this.boxes[x][z].setSelectionState(grid[i++] << 1);
+                break;
+                /*case ANY: {
+                    int[] grid = {0,0,0,0,0,0,0,0,
+                            0,0,0,1,0,0,0,0,
+                            0,1,0,0,0,0,0,0,
+                            0,0,0,1,0,0,0,0,
+                            0,1,1,0,0,0,0,0,
+                            0,0,0,1,1,0,0,0,
+                            0,0,0,0,0,0,0,0,
+                            1,0,1,0,0,1,0,0};
+                    for (int x = 0, i = 0; x < 8; x++) {
+                        for (int z = 0; z < 8; z++) {
+                            this.boxes[x][z].setSelectionState(grid[i++] << 1);
+                        }
                     }
                 }
+                break;*/
             }
-            break;*/
         }
 
         this.revalidate();
@@ -235,7 +237,7 @@ public class BedrockFrame extends JFrame {
         this.footer.add(optionsButton, BorderLayout.WEST);
         this.content = new JPanel();
         this.contentPane.add(this.content, BorderLayout.CENTER);
-        this.mode = SearchMode.SUB;
+        this.mode = SearchMode.FULL;
         this.rotation = Rotation.NORTH;
         this.refreshTable();
     }

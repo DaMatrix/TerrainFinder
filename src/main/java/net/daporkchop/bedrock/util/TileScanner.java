@@ -33,5 +33,5 @@ public interface TileScanner {
      * @param tileZ the tile's Z coordinate
      * @return a bitmask of all chunks that were found in the tile in XZ order
      */
-    int scan(int tileX, int tileZ);
+    long scan(int tileX, int tileZ);
 }

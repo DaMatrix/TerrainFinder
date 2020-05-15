@@ -43,8 +43,8 @@ public class BedrockAnyScanner implements TileScanner {
     }
 
     @Override
-    public int scan(int tileX, int tileZ) {
-        int bits = 0;
+    public long scan(int tileX, int tileZ) {
+        long bits = 0L;
         final byte[][] patterns = this.patterns;
         final int numPatterns = patterns.length;
 
@@ -85,8 +85,7 @@ public class BedrockAnyScanner implements TileScanner {
                             }
 
                             //if we've gotten this far, a match has been found
-                            bits |= 1 << ((subX << TILE_SHIFT) | subZ);
-                            bits = 1;
+                            bits |= 1L << ((subX << TILE_SHIFT) | subZ);
                             //don't break because we want to check other chunks in the same tile
                             break PATTERN;
                         }

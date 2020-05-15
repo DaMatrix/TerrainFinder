@@ -108,11 +108,11 @@ public final class Search implements Runnable {
         int tileX = extractX(pos);
         int tileZ = extractZ(pos);
         if (this.filter == null || this.filter.test(tileX, tileZ)) {
-            int i = this.scanner.scan(tileX, tileZ);
-            if (i != 0) {
+            long l = this.scanner.scan(tileX, tileZ);
+            if (l != 0L) {
                 for (int x = 0; x < TILE_SIZE; x++) {
                     for (int z = 0; z < TILE_SIZE; z++) {
-                        if ((i & (1 << ((x << TILE_SHIFT) | z))) != 0 && !this.onFound.found((tileX << TILE_SHIFT) | x, (tileZ << TILE_SHIFT) | z)) {
+                        if ((l & (1L << ((x << TILE_SHIFT) | z))) != 0 && !this.onFound.found((tileX << TILE_SHIFT) | x, (tileZ << TILE_SHIFT) | z)) {
                             ((DefaultPFuture<Void>) this.completedFuture).trySuccess(null);
                             return;
                         }
