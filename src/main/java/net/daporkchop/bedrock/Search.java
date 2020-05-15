@@ -86,8 +86,9 @@ public final class Search implements Runnable {
             if (i != 0) {
                 for (int x = 0; x < TILE_SIZE; x++) {
                     for (int z = 0; z < TILE_SIZE; z++) {
-                        if ((i & (1 << (x << TILE_BITS) | z)) != 0 && !this.onFound.found(x, z))   {
+                        if ((i & (1 << ((x << TILE_BITS) | z))) != 0 && !this.onFound.found((tileX << TILE_BITS) | x, (tileZ << TILE_BITS) | z))   {
                             ((DefaultPFuture<Void>) this.completedFuture).trySuccess(null);
+                            return;
                         }
                     }
                 }

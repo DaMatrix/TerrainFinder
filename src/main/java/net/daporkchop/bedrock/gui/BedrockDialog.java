@@ -2,10 +2,12 @@ package net.daporkchop.bedrock.gui;
 
 import net.daporkchop.bedrock.Search;
 import net.daporkchop.bedrock.mode.SearchMode;
+import net.daporkchop.bedrock.util.BedrockConstants;
 import net.daporkchop.bedrock.util.RotationMode;
 import net.daporkchop.lib.common.system.OperatingSystem;
 import net.daporkchop.lib.common.system.PlatformInfo;
 import net.daporkchop.lib.common.util.PorkUtil;
+import net.daporkchop.lib.concurrent.future.DefaultPFuture;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -20,6 +22,8 @@ import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.text.NumberFormat;
 import java.util.Locale;
+
+import static net.daporkchop.bedrock.util.BedrockConstants.*;
 
 public class BedrockDialog extends JFrame {
     public static final NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.US);
@@ -54,10 +58,6 @@ public class BedrockDialog extends JFrame {
         this.setVisible(true);
     }
 
-    public static void main() {
-        new BedrockDialog();
-    }
-
     private synchronized void onClick() {
         this.actionButton.setEnabled(false);
         if (this.search == null || this.search.completedFuture().isDone()) {
@@ -85,8 +85,17 @@ public class BedrockDialog extends JFrame {
                     null,
                     this.mode.create(pattern, this.rotationMode),
                     (x, z) -> {
-                        SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(null, "Found match at x=" + x + ", z=" + z + "(chunk: x=" + (x >> 4) + ", z=" + (z >> 4) + ")"));
-                        return true;
+                        synchronized (this.search) {
+                            return JOptionPane.showOptionDialog(
+                                    this,
+                                    "Found match at x=" + (x << 4) + ", z=" + (z << 4) + "(chunk: x=" + x + ", z=" + z + ")",
+                                    "Found match",
+                                    JOptionPane.OK_CANCEL_OPTION,
+                                    JOptionPane.QUESTION_MESSAGE,
+                                    null,
+                                    new Object[]{"Continue search", "Stop"},
+                                    null) == JOptionPane.OK_OPTION;
+                        }
                     });
             this.search.start(this.threads);
 
@@ -94,7 +103,7 @@ public class BedrockDialog extends JFrame {
                 this.actionButton.setEnabled(true);
                 while (!this.search.completedFuture().isDone()) {
                     this.actionButton.setText("Stop");
-                    this.scannedCount.setText(numberFormat.format(this.search.processed()) + " chunks scanned");
+                    this.scannedCount.setText(numberFormat.format(this.search.processed() * TILE_SIZE * TILE_SIZE) + " chunks scanned");
                     PorkUtil.sleep(100L);
                 }
                 this.actionButton.setText("Start");
@@ -111,9 +120,12 @@ public class BedrockDialog extends JFrame {
         this.content.setLayout(new GridLayout(this.mode.size(), this.mode.size()));
         this.boxes = new TriStateCheckBox[this.mode.size()][this.mode.size()];
 
+        long state = seed(123, -456);
         for (int x = 0; x < this.mode.size(); x++) {
             for (int z = 0; z < this.mode.size(); z++) {
                 this.content.add(this.boxes[x][z] = new TriStateCheckBox());
+                this.boxes[x][z].setSelectionState(4 <= (state >> 17) % 5 ? 2 : 0);
+                state = BedrockConstants.update(state);
             }
         }
         this.revalidate();

@@ -1,5 +1,6 @@
 package net.daporkchop.bedrock.util;
 
+import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 import net.daporkchop.lib.common.math.BinMath;
 
@@ -26,13 +27,30 @@ public class BedrockConstants {
         long base = floorL(sqrt(l >> 2L));
         long offset = (l >> 2L) - base * base;
         long val = min(offset, base);
-        return (int) (val ^ (l & 1L));
+        return (int) (val ^ -(l & 1L));
     }
 
     public static int extractZ(long l) {
         long base = floorL(sqrt(l >> 2L));
         long offset = (l >> 2L) - base * base;
         long val = offset >= base + 1L ? base - (offset >> 1L) : base;
-        return (int) (val ^ ((l >> 1L) & 1L));
+        return (int) (val ^ -((l >> 1L) & 1L));
+    }
+
+    public static long seed(int chunkX, int chunkZ) {
+        return (((chunkX * 0x4F9939F508L + chunkZ * 0x1EF1565BD5L) ^ 0x5DEECE66DL) * 0x9D89DAE4D6C29D9L + 0x1844E300013E5B56L) & 0xFFFFFFFFFFFFL;
+    }
+
+    public static long update(long state) {
+        return ((state * 0x530F32EB772C5F11L + 0x89712D3873C4CD04L) * 0x9D89DAE4D6C29D9L + 0x1844E300013E5B56L) & 0xFFFFFFFFFFFFL;
+    }
+
+    public static void fullChunk(@NonNull byte[] dst, int chunkX, int chunkZ) {
+        long state = seed(chunkX, chunkZ);
+
+        for (int i = 0; i < 256; i++) {
+            dst[i] = (byte) (4 <= (state >> 17) % 5 ? 1 : 0);
+            state = update(state);
+        }
     }
 }

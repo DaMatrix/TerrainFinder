@@ -7,6 +7,6 @@ import net.daporkchop.bedrock.gui.BedrockDialog;
  */
 public class Bedrock {
     public static void main(String[] args) {
-        BedrockDialog.main();
+        new BedrockDialog();
     }
 }

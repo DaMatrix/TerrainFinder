@@ -31,15 +31,13 @@ public class BedrockFullScanner implements TileScanner {
 
         for (int subX = 0; subX < TILE_SIZE; subX++) {
             for (int subZ = 0; subZ < TILE_SIZE; subZ++) {
-                final long seed = ((
-                        (((tileX << TILE_BITS) | subX) * 341873128712L + ((tileZ << TILE_BITS) | subZ) * 132897987541L) ^ 0x5DEECE66DL)
-                        * 709490313259657689L + 1748772144486964054L) & 281474976710655L;
+                final long seed = seed((tileX << TILE_BITS) | subX, (tileZ << TILE_BITS) | subZ);
                 PATTERN:
                 for (int patternIndex = 0; patternIndex < numPatterns; patternIndex++) {
                     byte[] pattern = patterns[patternIndex];
                     long state = seed;
 
-                    for (int i = 0; i < 16 * 16; i++) {
+                    for (int i = 0; i < 256; i++) {
                         byte v = pattern[i];
 
                         if (!ALLOW_WILDCARDS || v != WILDCARD) {
@@ -54,7 +52,7 @@ public class BedrockFullScanner implements TileScanner {
                             }
                         }
 
-                        state = ((state * 5985058416696778513L + -8542997297661424380L) * 709490313259657689L + 1748772144486964054L) & 281474976710655L;
+                        state = update(state);
                     }
 
                     bits |= 1 << ((subX << TILE_BITS) | subZ);
