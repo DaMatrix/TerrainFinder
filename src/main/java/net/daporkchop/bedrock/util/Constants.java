@@ -33,10 +33,10 @@ import static net.daporkchop.lib.common.math.PMath.*;
 @UtilityClass
 public class Constants {
     public static final boolean ALLOW_WILDCARDS = Boolean.parseBoolean(System.getProperty("bedrock.wildcard", "true"));
-    public static final byte WILDCARD = 2;
+    public static final int WILDCARD = 2;
 
     public static final int TILE_SIZE = 4; //the size of a tile in chunks
-    public static final int TILE_SHIFT = 2;
+    public static final int TILE_SHIFT = BinMath.getNumBitsNeededFor(TILE_SIZE) - 1;
 
     public static final int WORLD_RADIUS = 30000000 >> 4 >> TILE_SHIFT; //the radius of the world in tiles
     public static final long WHOLE_WORLD_CAP = ((long) WORLD_RADIUS * WORLD_RADIUS) << 2L;

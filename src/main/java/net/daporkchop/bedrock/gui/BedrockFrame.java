@@ -26,6 +26,7 @@ import net.daporkchop.bedrock.util.Constants;
 import net.daporkchop.bedrock.util.Rotation;
 import net.daporkchop.lib.common.system.OperatingSystem;
 import net.daporkchop.lib.common.system.PlatformInfo;
+import net.daporkchop.lib.common.util.PArrays;
 import net.daporkchop.lib.common.util.PorkUtil;
 
 import javax.swing.JButton;
@@ -40,11 +41,13 @@ import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.text.NumberFormat;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.DoubleStream;
 
 import static net.daporkchop.bedrock.util.Constants.*;
 
 public class BedrockFrame extends JFrame {
-    public static final NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.US);
+    public static final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance(Locale.US);
 
     static {
         try {
@@ -119,11 +122,32 @@ public class BedrockFrame extends JFrame {
 
             new Thread(() -> {
                 this.actionButton.setEnabled(true);
+
+                long iterations = 0L;
+                double[] speeds = new double[150]; //15 seconds
+                long lastTime = System.nanoTime();
+                long lastProcessed = 0L;
+
                 while (!this.search.completedFuture().isDone()) {
+                    long now = System.nanoTime();
+                    long processedNow = this.search.processed() * TILE_SIZE * TILE_SIZE;
+                    long processed = processedNow - lastProcessed;
+                    lastProcessed = processedNow;
+                    long timeDelta = now - lastTime;
+                    lastTime = now;
+                    System.arraycopy(speeds, 0, speeds, 1, speeds.length - 1);
+                    if (iterations++ > 10L) {
+                        speeds[0] = (double) processed * TimeUnit.SECONDS.toNanos(1L) / (double) timeDelta;
+                    }
+
                     this.actionButton.setText("Stop");
-                    this.scannedCount.setText(numberFormat.format(this.search.processed() * TILE_SIZE * TILE_SIZE) + " chunks scanned");
+                    this.scannedCount.setText(String.format(
+                            "%s chunks (%s/s)",
+                            NUMBER_FORMAT.format(processedNow),
+                            NUMBER_FORMAT.format(DoubleStream.of(speeds).sum() / (double) speeds.length)));
                     PorkUtil.sleep(100L);
                 }
+
                 this.actionButton.setText("Start");
             }, "GUI updater worker").start();
         } else {
@@ -171,6 +195,22 @@ public class BedrockFrame extends JFrame {
                 }
             }
             break;
+            /*case ANY: {
+                int[] grid = {0,0,0,0,0,0,0,0,
+                        0,0,0,1,0,0,0,0,
+                        0,1,0,0,0,0,0,0,
+                        0,0,0,1,0,0,0,0,
+                        0,1,1,0,0,0,0,0,
+                        0,0,0,1,1,0,0,0,
+                        0,0,0,0,0,0,0,0,
+                        1,0,1,0,0,1,0,0};
+                for (int x = 0, i = 0; x < 8; x++) {
+                    for (int z = 0; z < 8; z++) {
+                        this.boxes[x][z].setSelectionState(grid[i++] << 1);
+                    }
+                }
+            }
+            break;*/
         }
 
         this.revalidate();
@@ -195,7 +235,7 @@ public class BedrockFrame extends JFrame {
         this.footer.add(optionsButton, BorderLayout.WEST);
         this.content = new JPanel();
         this.contentPane.add(this.content, BorderLayout.CENTER);
-        this.mode = SearchMode.FULL;
+        this.mode = SearchMode.SUB;
         this.rotation = Rotation.NORTH;
         this.refreshTable();
     }

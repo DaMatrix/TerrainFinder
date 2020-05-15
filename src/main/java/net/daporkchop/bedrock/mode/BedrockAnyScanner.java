@@ -27,16 +27,19 @@ import net.daporkchop.bedrock.util.TileScanner;
 import static net.daporkchop.bedrock.util.Constants.*;
 
 /**
- * Scans an entire 16x16 chunk for a 16x16 pattern
+ * Searches for an 8x8 pattern that can overlap into neighboring chunks
  *
  * @author DaPorkchop_
  */
+//TODO: doesn't work
 @SuppressWarnings("Duplicates")
-public class BedrockFullScanner implements TileScanner {
+public class BedrockAnyScanner implements TileScanner {
+    private static final ThreadLocal<byte[]> CACHE = ThreadLocal.withInitial(() -> new byte[256 * 3 * 3]);
+
     protected final byte[][] patterns;
 
-    public BedrockFullScanner(@NonNull byte[] pattern, @NonNull Rotation rotation) {
-        this.patterns = rotation.bake(pattern, 16, 0xF, 4);
+    public BedrockAnyScanner(@NonNull byte[] pattern, @NonNull Rotation rotation) {
+        this.patterns = rotation.bake(pattern, 8, 7, 3);
     }
 
     @Override
@@ -45,43 +48,49 @@ public class BedrockFullScanner implements TileScanner {
         final byte[][] patterns = this.patterns;
         final int numPatterns = patterns.length;
 
+        final byte[] cache = CACHE.get();
+
         for (int subX = 0; subX < TILE_SIZE; subX++) {
             for (int subZ = 0; subZ < TILE_SIZE; subZ++) {
-                final long seed = seedBedrock((tileX << TILE_SHIFT) | subX, (tileZ << TILE_SHIFT) | subZ);
+                //generate chunk data
+                for (int relX = -1; relX <= 1; relX++) {
+                    for (int relZ = -1; relZ <= 1; relZ++) {
+                        //generate chunk data
+                        long state = seedBedrock(((tileX << TILE_SHIFT) | subX) + relX, ((tileZ << TILE_SHIFT) | subZ) + relZ);
+                        for (int x = 0; x < 16; x++) {
+                            int i = (16 * (relX + 1) + x) * 48 + (relZ + 1) * 16;
+                            for (int z = 0; z < 16; z++) {
+                                cache[(16 * (relX + 1) + x) * 48 + ((relZ + 1) * 16 + z)] = (byte) flagBedrock(state);
+                                state = updateBedrock(state);
+                            }
+                        }
+                    }
+                }
+
+                //do search
                 PATTERN:
                 for (int patternIndex = 0; patternIndex < numPatterns; patternIndex++) {
                     byte[] pattern = patterns[patternIndex];
-                    long state = seed;
 
-                    for (int i = 0; i < 256; i++) {
-                        byte v = pattern[i];
-
-                        //~110 million/s (wildcards)
-                        //~106 million/s (wildcards, no sign extension (why?))
-                        //~109.5 million/s (no wildcards)
-                        if (!ALLOW_WILDCARDS || v != WILDCARD) {
-                            if (4 == (state >> 17) % 5) {
-                                if (v == 0) {
-                                    continue PATTERN;
-                                }
-                            } else {
-                                if (v == 1) {
-                                    continue PATTERN;
+                    for (int offsetX = 0; offsetX <= 40; offsetX++) {
+                        OFFSET:
+                        for (int offsetZ = 0; offsetZ <= 40; offsetZ++) {
+                            for (int x = 0; x < 8; x++) {
+                                for (int z = 0; z < 8; z++) {
+                                    byte v = pattern[(x << 3) | z];
+                                    if ((!ALLOW_WILDCARDS || v != WILDCARD) && v != cache[((offsetX + x) * 48) + (offsetZ + z)]) {
+                                        continue OFFSET;
+                                    }
                                 }
                             }
+
+                            //if we've gotten this far, a match has been found
+                            bits |= 1 << ((subX << TILE_SHIFT) | subZ);
+                            bits = 1;
+                            //don't break because we want to check other chunks in the same tile
+                            break PATTERN;
                         }
-
-                        //~107 million/s (wildcards)
-                        //~100 million/s (no wildcards)
-                        /*if ((!ALLOW_WILDCARDS || v != WILDCARD) && v != flagBedrock(state)) {
-                            continue PATTERN;
-                        }*/
-
-                        state = updateBedrock(state);
                     }
-
-                    bits |= 1 << ((subX << TILE_SHIFT) | subZ);
-                    break;
                 }
             }
         }

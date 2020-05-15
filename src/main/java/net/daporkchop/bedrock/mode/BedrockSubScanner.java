@@ -38,7 +38,7 @@ public class BedrockSubScanner implements TileScanner {
     protected final byte[][] patterns;
 
     public BedrockSubScanner(@NonNull byte[] pattern, @NonNull Rotation rotation) {
-        this.patterns = rotation.bake(pattern, 8, 7, 2);
+        this.patterns = rotation.bake(pattern, 8, 7, 3);
     }
 
     @Override
@@ -64,20 +64,20 @@ public class BedrockSubScanner implements TileScanner {
                     byte[] pattern = patterns[patternIndex];
 
                     for (int offsetX = 0; offsetX <= 8; offsetX++) {
-                        OFFSET:
                         for (int offsetZ = 0; offsetZ <= 8; offsetZ++) {
-                            for (int x = 0; x < 8; x++) {
-                                for (int z = 0; z < 8; z++) {
+                            boolean wrong = false;
+                            for (int x = 0; !wrong && x < 8; x++) {
+                                for (int z = 0; !wrong && z < 8; z++) {
                                     byte v = pattern[(x << 3) | z];
-                                    if ((!ALLOW_WILDCARDS || v != WILDCARD) && v != chunk[((offsetX + x) << 4) | (offsetZ + z)])  {
-                                        continue OFFSET;
-                                    }
+                                    wrong |= (!ALLOW_WILDCARDS || v != WILDCARD) && v != chunk[((offsetX + x) << 4) | (offsetZ + z)];
                                 }
                             }
 
-                            //if we've gotten this far, a match has been found
-                            bits |= 1 << ((subX << TILE_SHIFT) | subZ);
-                            break PATTERN;
+                            if (!wrong) {
+                                //if we've gotten this far, a match has been found
+                                bits |= 1 << ((subX << TILE_SHIFT) | subZ);
+                                break PATTERN;
+                            }
                         }
                     }
                 }

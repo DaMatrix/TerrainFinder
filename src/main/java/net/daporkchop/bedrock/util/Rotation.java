@@ -100,7 +100,7 @@ public enum Rotation {
     public byte[][] bake(@NonNull byte[] pattern, int size, int mask, int shift) {
         return PArrays.filled(this.rounds, byte[][]::new, i -> {
             byte[] arr = new byte[pattern.length];
-            this.rotate(pattern, arr, 16, 0xF, 4, i);
+            this.rotate(pattern, arr, size, mask, shift, i);
             return arr;
         });
     }

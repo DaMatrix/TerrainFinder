@@ -45,7 +45,13 @@ public enum SearchMode {
         public TileScanner create(@NonNull byte[] pattern, @NonNull Rotation rotation) {
             return new BedrockSubScanner(pattern, rotation);
         }
-    };
+    },
+    /*ANY(8, "Searches for an 8x8 pattern that may overlap chunk borders (slowest)")  {
+        @Override
+        public TileScanner create(@NonNull byte[] pattern, @NonNull Rotation rotation) {
+            return new BedrockAnyScanner(pattern, rotation);
+        }
+    }*/;
 
     private final int size;
 

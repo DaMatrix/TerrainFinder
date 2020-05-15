@@ -91,21 +91,28 @@ public final class Search implements Runnable {
      */
     @Override
     public void run() {
-        long pos;
-        while (!this.completedFuture.isDone() && (pos = PUnsafe.getAndAddLong(this, PROCESSED_OFFSET, 1L)) < WHOLE_WORLD_CAP) {
-            this.doWork(pos);
+        try {
+            long pos;
+            while (!this.completedFuture.isDone() && (pos = PUnsafe.getAndAddLong(this, PROCESSED_OFFSET, 1L)) < WHOLE_WORLD_CAP) {
+                this.doWork(pos);
+            }
+            ((DefaultPFuture<Void>) this.completedFuture).trySuccess(null); //complete future if whole world was scanned
+        } catch (Exception e)   {
+            ((DefaultPFuture<Void>) this.completedFuture).tryFailure(e);
+            throw new RuntimeException(e);
         }
     }
 
+    //having this as a separate method should allow JIT to apply more aggressive optimizations
     private void doWork(long pos) {
         int tileX = extractX(pos);
         int tileZ = extractZ(pos);
-        if (this.filter == null || this.filter.test(tileX, tileZ))  {
+        if (this.filter == null || this.filter.test(tileX, tileZ)) {
             int i = this.scanner.scan(tileX, tileZ);
             if (i != 0) {
                 for (int x = 0; x < TILE_SIZE; x++) {
                     for (int z = 0; z < TILE_SIZE; z++) {
-                        if ((i & (1 << ((x << TILE_SHIFT) | z))) != 0 && !this.onFound.found((tileX << TILE_SHIFT) | x, (tileZ << TILE_SHIFT) | z))   {
+                        if ((i & (1 << ((x << TILE_SHIFT) | z))) != 0 && !this.onFound.found((tileX << TILE_SHIFT) | x, (tileZ << TILE_SHIFT) | z)) {
                             ((DefaultPFuture<Void>) this.completedFuture).trySuccess(null);
                             return;
                         }
