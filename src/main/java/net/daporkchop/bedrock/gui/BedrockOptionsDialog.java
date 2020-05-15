@@ -22,11 +22,10 @@ package net.daporkchop.bedrock.gui;
 
 import lombok.NonNull;
 import net.daporkchop.bedrock.mode.SearchMode;
-import net.daporkchop.bedrock.util.RotationMode;
+import net.daporkchop.bedrock.util.Rotation;
 
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
@@ -40,21 +39,12 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-public class BedrockOptionsDialog extends JFrame {
-    public static final NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.US);
-
-    static {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
-            ex.printStackTrace();
-        }
-    }
-
+public class BedrockOptionsDialog extends JDialog {
     private JPanel contentPane;
-    private BedrockDialog dialog;
+    private BedrockFrame dialog;
 
-    public BedrockOptionsDialog(@NonNull BedrockDialog dialog) {
+    public BedrockOptionsDialog(@NonNull BedrockFrame dialog) {
+        super(dialog);
         this.dialog = dialog;
         this.setupUI();
         this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
@@ -84,12 +74,12 @@ public class BedrockOptionsDialog extends JFrame {
         this.contentPane.add(modeBox);
 
         this.contentPane.add(new JLabel("Rotation"));
-        JComboBox<RotationMode> rotBox = new JComboBox<>();
-        rotBox.setSelectedItem(this.dialog.rotationMode);
+        JComboBox<Rotation> rotBox = new JComboBox<>(Rotation.values());
+        rotBox.setSelectedItem(this.dialog.rotation);
         rotBox.addItemListener(e -> {
-            RotationMode newMode = (RotationMode) e.getItem();
-            if (newMode != this.dialog.rotationMode) {
-                this.dialog.rotationMode = newMode;
+            Rotation newMode = (Rotation) e.getItem();
+            if (newMode != this.dialog.rotation) {
+                this.dialog.rotation = newMode;
                 System.out.println("Changed to " + newMode);
             }
         });

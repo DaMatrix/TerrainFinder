@@ -22,12 +22,11 @@ package net.daporkchop.bedrock.gui;
 
 import net.daporkchop.bedrock.Search;
 import net.daporkchop.bedrock.mode.SearchMode;
-import net.daporkchop.bedrock.util.BedrockConstants;
-import net.daporkchop.bedrock.util.RotationMode;
+import net.daporkchop.bedrock.util.Constants;
+import net.daporkchop.bedrock.util.Rotation;
 import net.daporkchop.lib.common.system.OperatingSystem;
 import net.daporkchop.lib.common.system.PlatformInfo;
 import net.daporkchop.lib.common.util.PorkUtil;
-import net.daporkchop.lib.concurrent.future.DefaultPFuture;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -35,7 +34,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import java.awt.BorderLayout;
@@ -43,9 +41,9 @@ import java.awt.GridLayout;
 import java.text.NumberFormat;
 import java.util.Locale;
 
-import static net.daporkchop.bedrock.util.BedrockConstants.*;
+import static net.daporkchop.bedrock.util.Constants.*;
 
-public class BedrockDialog extends JFrame {
+public class BedrockFrame extends JFrame {
     public static final NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.US);
 
     static {
@@ -62,12 +60,12 @@ public class BedrockDialog extends JFrame {
     private JPanel footer;
     private JPanel content;
     protected SearchMode mode;
-    protected RotationMode rotationMode;
+    protected Rotation rotation;
     protected int threads = Runtime.getRuntime().availableProcessors();
     private TriStateCheckBox[][] boxes;
     private Search search;
 
-    public BedrockDialog() {
+    public BedrockFrame() {
         this.setupUI();
         this.setDefaultCloseOperation(JDialog.EXIT_ON_CLOSE);
         this.setContentPane(this.contentPane);
@@ -103,7 +101,7 @@ public class BedrockDialog extends JFrame {
 
             this.search = new Search(
                     null,
-                    this.mode.create(pattern, this.rotationMode),
+                    this.mode.create(pattern, this.rotation),
                     (x, z) -> {
                         synchronized (this.search) {
                             return JOptionPane.showOptionDialog(
@@ -140,14 +138,41 @@ public class BedrockDialog extends JFrame {
         this.content.setLayout(new GridLayout(this.mode.size(), this.mode.size()));
         this.boxes = new TriStateCheckBox[this.mode.size()][this.mode.size()];
 
-        long state = seed(123, -456);
         for (int x = 0; x < this.mode.size(); x++) {
             for (int z = 0; z < this.mode.size(); z++) {
                 this.content.add(this.boxes[x][z] = new TriStateCheckBox());
-                this.boxes[x][z].setSelectionState(4 <= (state >> 17) % 5 ? 2 : 0);
-                state = BedrockConstants.update(state);
             }
         }
+
+        switch (this.mode)  {
+            case FULL: {
+                long state = seedBedrock(123, -456);
+                for (int x = 0; x < 16; x++) {
+                    for (int z = 0; z < 16; z++) {
+                        this.boxes[x][z].setSelectionState(flagBedrock(state) << 1);
+                        state = Constants.updateBedrock(state);
+                    }
+                }
+            }
+            break;
+            case SUB: {
+                int[] grid = {0,0,1,0,0,0,1,0,
+                        0,0,0,0,0,0,0,0,
+                        0,0,1,1,0,0,0,0,
+                        0,1,1,0,0,0,0,0,
+                        0,0,0,1,0,0,0,0,
+                        0,0,0,0,0,1,0,1,
+                        1,0,0,0,1,0,0,0,
+                        0,0,1,0,0,1,0,1};
+                for (int x = 0, i = 0; x < 8; x++) {
+                    for (int z = 0; z < 8; z++) {
+                        this.boxes[x][z].setSelectionState(grid[i++] << 1);
+                    }
+                }
+            }
+            break;
+        }
+
         this.revalidate();
         this.repaint();
     }
@@ -166,12 +191,12 @@ public class BedrockDialog extends JFrame {
         this.footer.add(this.actionButton, BorderLayout.EAST);
         JButton optionsButton = new JButton();
         optionsButton.setText("Options");
-        optionsButton.addActionListener(e -> new BedrockOptionsDialog(BedrockDialog.this));
+        optionsButton.addActionListener(e -> new BedrockOptionsDialog(BedrockFrame.this));
         this.footer.add(optionsButton, BorderLayout.WEST);
         this.content = new JPanel();
         this.contentPane.add(this.content, BorderLayout.CENTER);
         this.mode = SearchMode.FULL;
-        this.rotationMode = RotationMode.NORTH;
+        this.rotation = Rotation.NORTH;
         this.refreshTable();
     }
 }

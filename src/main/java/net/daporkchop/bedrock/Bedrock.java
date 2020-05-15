@@ -20,13 +20,43 @@
 
 package net.daporkchop.bedrock;
 
-import net.daporkchop.bedrock.gui.BedrockDialog;
+import net.daporkchop.bedrock.gui.BedrockFrame;
+
+import java.util.Arrays;
+
+import static net.daporkchop.bedrock.util.Constants.*;
 
 /**
  * @author DaPorkchop_
  */
 public class Bedrock {
     public static void main(String[] args) {
-        new BedrockDialog();
+        if (false) {
+            char[][] c = new char[64][64];
+            for (char[] line : c) {
+                Arrays.fill(line, ' ');
+            }
+            try {
+                for (long l = 0;; l++) {
+                    int x = extractX(l);
+                    int z = extractZ(l);
+                    System.out.printf("%04d: %d, %d\n", l, x, z);
+                    c[x + 32][z + 32] = '#';
+                    for (char[] line : c) {
+                        System.out.println(line);
+                    }
+                    System.out.println();
+                }
+            } catch (ArrayIndexOutOfBoundsException e)  {
+                e.printStackTrace(System.out);
+            } finally {
+                for (char[] line : c) {
+                    System.out.println(line);
+                }
+                System.out.println();
+            }
+            return;
+        }
+        new BedrockFrame();
     }
 }

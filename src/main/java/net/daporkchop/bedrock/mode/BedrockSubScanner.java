@@ -27,16 +27,18 @@ import net.daporkchop.bedrock.util.TileScanner;
 import static net.daporkchop.bedrock.util.Constants.*;
 
 /**
- * Scans an entire 16x16 chunk for a 16x16 pattern
+ * Scans for an 8x8 pattern contained in a single chunk
  *
  * @author DaPorkchop_
  */
 @SuppressWarnings("Duplicates")
-public class BedrockFullScanner implements TileScanner {
+public class BedrockSubScanner implements TileScanner {
+    private static final ThreadLocal<byte[]> CHUNK_CACHE = ThreadLocal.withInitial(() -> new byte[256]);
+
     protected final byte[][] patterns;
 
-    public BedrockFullScanner(@NonNull byte[] pattern, @NonNull Rotation rotation) {
-        this.patterns = rotation.bake(pattern, 16, 0xF, 4);
+    public BedrockSubScanner(@NonNull byte[] pattern, @NonNull Rotation rotation) {
+        this.patterns = rotation.bake(pattern, 8, 7, 2);
     }
 
     @Override
@@ -45,34 +47,39 @@ public class BedrockFullScanner implements TileScanner {
         final byte[][] patterns = this.patterns;
         final int numPatterns = patterns.length;
 
+        final byte[] chunk = CHUNK_CACHE.get();
+
         for (int subX = 0; subX < TILE_SIZE; subX++) {
             for (int subZ = 0; subZ < TILE_SIZE; subZ++) {
-                final long seed = seedBedrock((tileX << TILE_SHIFT) | subX, (tileZ << TILE_SHIFT) | subZ);
+                //generate chunk data
+                long state = seedBedrock((tileX << TILE_SHIFT) | subX, (tileZ << TILE_SHIFT) | subZ);
+                for (int i = 0; i < 256; i++) {
+                    chunk[i] = (byte) flagBedrock(state);
+                    state = updateBedrock(state);
+                }
+
+                //do search
                 PATTERN:
                 for (int patternIndex = 0; patternIndex < numPatterns; patternIndex++) {
                     byte[] pattern = patterns[patternIndex];
-                    long state = seed;
 
-                    for (int i = 0; i < 256; i++) {
-                        byte v = pattern[i];
-
-                        if (!ALLOW_WILDCARDS || v != WILDCARD) {
-                            if (4 <= (state >> 17) % 5) {
-                                if (v == 0) {
-                                    continue PATTERN;
-                                }
-                            } else {
-                                if (v == 1) {
-                                    continue PATTERN;
+                    for (int offsetX = 0; offsetX <= 8; offsetX++) {
+                        OFFSET:
+                        for (int offsetZ = 0; offsetZ <= 8; offsetZ++) {
+                            for (int x = 0; x < 8; x++) {
+                                for (int z = 0; z < 8; z++) {
+                                    byte v = pattern[(x << 3) | z];
+                                    if ((!ALLOW_WILDCARDS || v != WILDCARD) && v != chunk[((offsetX + x) << 4) | (offsetZ + z)])  {
+                                        continue OFFSET;
+                                    }
                                 }
                             }
+
+                            //if we've gotten this far, a match has been found
+                            bits |= 1 << ((subX << TILE_SHIFT) | subZ);
+                            break PATTERN;
                         }
-
-                        state = updateBedrock(state);
                     }
-
-                    bits |= 1 << ((subX << TILE_SHIFT) | subZ);
-                    break;
                 }
             }
         }

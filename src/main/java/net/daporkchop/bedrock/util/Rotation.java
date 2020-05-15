@@ -22,12 +22,13 @@ package net.daporkchop.bedrock.util;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import net.daporkchop.lib.common.util.PArrays;
 
 /**
  * @author DaPorkchop_
  */
 @RequiredArgsConstructor
-public enum RotationMode {
+public enum Rotation {
     NORTH(1) {
         @Override
         public void rotate(@NonNull byte[] in, @NonNull byte[] out, int size, int mask, int shift, int r) {
@@ -71,7 +72,7 @@ public enum RotationMode {
         }
     };
 
-    private static final RotationMode[] VALUES = values();
+    private static final Rotation[] VALUES = values();
 
     public final int rounds;
 
@@ -86,4 +87,21 @@ public enum RotationMode {
      * @param r     the current round number
      */
     public abstract void rotate(@NonNull byte[] in, @NonNull byte[] out, int size, int mask, int shift, int r);
+
+    /**
+     * Generates all permutations of the given pattern
+     *
+     * @param pattern the input pattern
+     * @param size    the size (N by N) of the tile to rotate
+     * @param mask    the bitmask of the size
+     * @param shift   the number of bits to shift the X coordinate by
+     * @return all permutations of the pattern
+     */
+    public byte[][] bake(@NonNull byte[] pattern, int size, int mask, int shift) {
+        return PArrays.filled(this.rounds, byte[][]::new, i -> {
+            byte[] arr = new byte[pattern.length];
+            this.rotate(pattern, arr, 16, 0xF, 4, i);
+            return arr;
+        });
+    }
 }

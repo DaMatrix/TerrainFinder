@@ -20,7 +20,6 @@
 
 package net.daporkchop.bedrock;
 
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +32,7 @@ import net.daporkchop.lib.concurrent.PFuture;
 import net.daporkchop.lib.concurrent.future.DefaultPFuture;
 import net.daporkchop.lib.unsafe.PUnsafe;
 
-import static net.daporkchop.bedrock.util.BedrockConstants.*;
+import static net.daporkchop.bedrock.util.Constants.*;
 import static net.daporkchop.lib.common.util.PValidation.*;
 
 /**
@@ -106,7 +105,7 @@ public final class Search implements Runnable {
             if (i != 0) {
                 for (int x = 0; x < TILE_SIZE; x++) {
                     for (int z = 0; z < TILE_SIZE; z++) {
-                        if ((i & (1 << ((x << TILE_BITS) | z))) != 0 && !this.onFound.found((tileX << TILE_BITS) | x, (tileZ << TILE_BITS) | z))   {
+                        if ((i & (1 << ((x << TILE_SHIFT) | z))) != 0 && !this.onFound.found((tileX << TILE_SHIFT) | x, (tileZ << TILE_SHIFT) | z))   {
                             ((DefaultPFuture<Void>) this.completedFuture).trySuccess(null);
                             return;
                         }

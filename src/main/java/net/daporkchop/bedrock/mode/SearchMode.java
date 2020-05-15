@@ -24,7 +24,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
-import net.daporkchop.bedrock.util.RotationMode;
+import net.daporkchop.bedrock.util.Rotation;
 import net.daporkchop.bedrock.util.TileScanner;
 
 /**
@@ -34,10 +34,16 @@ import net.daporkchop.bedrock.util.TileScanner;
 @Getter
 @Accessors(fluent = true)
 public enum SearchMode {
-    FULL(16, "Searches for a full, chunk-aligned 16² pattern") {
+    FULL(16, "Searches for a full, chunk-aligned 16² pattern (fastest)") {
         @Override
-        public TileScanner create(@NonNull byte[] pattern, @NonNull RotationMode rotation) {
+        public TileScanner create(@NonNull byte[] pattern, @NonNull Rotation rotation) {
             return new BedrockFullScanner(pattern, rotation);
+        }
+    },
+    SUB(8, "Searches for an 8x8 pattern within a single chunk (slower)") {
+        @Override
+        public TileScanner create(@NonNull byte[] pattern, @NonNull Rotation rotation) {
+            return new BedrockSubScanner(pattern, rotation);
         }
     };
 
@@ -46,5 +52,5 @@ public enum SearchMode {
     @NonNull
     private final String description;
 
-    public abstract TileScanner create(@NonNull byte[] pattern, @NonNull RotationMode rotation);
+    public abstract TileScanner create(@NonNull byte[] pattern, @NonNull Rotation rotation);
 }
