@@ -11,6 +11,9 @@ import static net.daporkchop.lib.common.math.PMath.*;
  */
 @UtilityClass
 public class BedrockConstants {
+    public static final boolean ALLOW_WILDCARDS = Boolean.parseBoolean(System.getProperty("bedrock.wildcard", "true"));
+    public static final byte WILDCARD = 2;
+
     public static final int TILE_SIZE = 4; //the size of a tile in chunks
     public static final int TILE_BITS = BinMath.getNumBitsNeededFor(TILE_SIZE);
 

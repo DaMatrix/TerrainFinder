@@ -1,17 +1,24 @@
 package net.daporkchop.bedrock.gui;
 
 import lombok.NonNull;
-import net.daporkchop.bedrock.mode.bedrock.BedrockMode;
+import net.daporkchop.bedrock.mode.SearchMode;
 import net.daporkchop.bedrock.util.RotationMode;
 
-import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import java.awt.*;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.SwingConstants;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+import java.awt.BorderLayout;
+import java.awt.GridLayout;
 import java.text.NumberFormat;
+import java.util.Arrays;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 public class BedrockOptionsDialog extends JFrame {
     public static final NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.US);
@@ -29,85 +36,53 @@ public class BedrockOptionsDialog extends JFrame {
 
     public BedrockOptionsDialog(@NonNull BedrockDialog dialog) {
         this.dialog = dialog;
-        setupUI();
-        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        setContentPane(contentPane);
+        this.setupUI();
+        this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        this.setContentPane(this.contentPane);
         this.pack();
         this.setVisible(true);
     }
 
     private void setupUI() {
-        contentPane = new JPanel();
-        contentPane.setLayout(new GridLayout(3, 2));
+        this.contentPane = new JPanel();
+        this.contentPane.setLayout(new GridLayout(3, 2));
 
-        {
-            contentPane.add(new JLabel("Mode"));
-            JComboBox modeBox = new JComboBox();
-            {
-                String s = "<html>";
-                for (BedrockMode mode : BedrockMode.values()) {
-                    modeBox.addItem(mode);
-                    s += "<strong>" + mode.name() + "</strong>: " + mode.desc + "<br>";
-                }
-                modeBox.setSelectedItem(dialog.mode);
-                modeBox.setToolTipText(s + "</html>");
-
-                modeBox.addItemListener(new ItemListener() {
-                    @Override
-                    public void itemStateChanged(ItemEvent itemEvent) {
-                        BedrockMode newMode = (BedrockMode) itemEvent.getItem();
-                        if (newMode != dialog.mode) {
-                            dialog.mode = newMode;
-                            System.out.println("Changed to " + newMode);
-                            dialog.refreshTable();
-                        }
-                    }
-                });
+        this.contentPane.add(new JLabel("Mode"));
+        JComboBox<SearchMode> modeBox = new JComboBox<>(SearchMode.values());
+        modeBox.setSelectedItem(this.dialog.mode);
+        modeBox.setToolTipText(Arrays.stream(SearchMode.values())
+                .map(mode -> String.format("<strong>%s</strong>: %s", mode.name(), mode.description()))
+                .collect(Collectors.joining("<br>", "<html>", "</html>")));
+        modeBox.addItemListener(e -> {
+            SearchMode newMode = (SearchMode) e.getItem();
+            if (newMode != this.dialog.mode) {
+                this.dialog.mode = newMode;
+                System.out.println("Changed to " + newMode);
+                this.dialog.refreshTable();
             }
-            contentPane.add(modeBox);
-        }
+        });
+        this.contentPane.add(modeBox);
 
-        {
-            contentPane.add(new JLabel("Rotation"));
-            JComboBox rotBox = new JComboBox();
-            {
-                for (RotationMode mode : RotationMode.values()) {
-                    rotBox.addItem(mode);
-                }
-                rotBox.setSelectedItem(dialog.rotationMode);
-                rotBox.addItemListener(new ItemListener() {
-                    @Override
-                    public void itemStateChanged(ItemEvent itemEvent) {
-                        RotationMode newMode = (RotationMode) itemEvent.getItem();
-                        if (newMode != dialog.rotationMode) {
-                            dialog.rotationMode = newMode;
-                            System.out.println("Changed to " + newMode);
-                        }
-                    }
-                });
+        this.contentPane.add(new JLabel("Rotation"));
+        JComboBox<RotationMode> rotBox = new JComboBox<>();
+        rotBox.setSelectedItem(this.dialog.rotationMode);
+        rotBox.addItemListener(e -> {
+            RotationMode newMode = (RotationMode) e.getItem();
+            if (newMode != this.dialog.rotationMode) {
+                this.dialog.rotationMode = newMode;
+                System.out.println("Changed to " + newMode);
             }
-            contentPane.add(rotBox);
-        }
+        });
+        this.contentPane.add(rotBox);
 
-        {
-            contentPane.add(new JLabel("Threads"));
-
-            JPanel panel = new JPanel();
-            panel.setLayout(new BorderLayout(0, 0));
-
-            {
-                JLabel label = new JLabel(String.valueOf(dialog.threads));
-                JSlider slider = new JSlider(SwingConstants.HORIZONTAL, 1, Runtime.getRuntime().availableProcessors(), this.dialog.threads);
-                slider.addChangeListener(new ChangeListener() {
-                    public void stateChanged(ChangeEvent e) {
-                        label.setText(String.valueOf(dialog.threads = slider.getValue()));
-                    }
-                });
-
-                panel.add(label, BorderLayout.EAST);
-                panel.add(slider, BorderLayout.CENTER);
-            }
-            contentPane.add(panel);
-        }
+        this.contentPane.add(new JLabel("Threads"));
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout(0, 0));
+        JLabel label = new JLabel(String.valueOf(this.dialog.threads));
+        JSlider slider = new JSlider(SwingConstants.HORIZONTAL, 1, Runtime.getRuntime().availableProcessors(), this.dialog.threads);
+        slider.addChangeListener(e -> label.setText(String.valueOf(this.dialog.threads = slider.getValue())));
+        panel.add(label, BorderLayout.EAST);
+        panel.add(slider, BorderLayout.CENTER);
+        this.contentPane.add(panel);
     }
 }
