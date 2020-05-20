@@ -142,9 +142,10 @@ public class BedrockFrame extends JFrame {
 
                     this.actionButton.setText("Stop");
                     this.scannedCount.setText(String.format(
-                            "%s chunks (%s/s)",
+                            "%s chunks (%s/s) - %s blocks from spawn",
                             NUMBER_FORMAT.format(processedNow),
-                            NUMBER_FORMAT.format(DoubleStream.of(speeds).sum() / (double) speeds.length)));
+                            NUMBER_FORMAT.format(DoubleStream.of(speeds).sum() / (double) speeds.length),
+                            NUMBER_FORMAT.format(Math.max(extractX(processedNow), extractZ(processedNow)))));
                     PorkUtil.sleep(100L);
                 }
 
