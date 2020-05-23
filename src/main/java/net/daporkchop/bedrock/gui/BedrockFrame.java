@@ -59,8 +59,7 @@ public class BedrockFrame extends JFrame {
 
     private JPanel contentPane;
     private JLabel scannedCount;
-    private JButton actionButton;
-    private JPanel footer;
+    private JButton startStopButton;
     private JPanel content;
     protected SearchMode mode;
     protected Rotation rotation;
@@ -72,17 +71,17 @@ public class BedrockFrame extends JFrame {
         this.setupUI();
         this.setDefaultCloseOperation(JDialog.EXIT_ON_CLOSE);
         this.setContentPane(this.contentPane);
-        this.getRootPane().setDefaultButton(this.actionButton);
+        this.getRootPane().setDefaultButton(this.startStopButton);
 
-        this.actionButton.addActionListener(e -> this.onClick());
+        this.startStopButton.addActionListener(e -> this.onClick());
         this.pack();
         this.setVisible(true);
     }
 
     private synchronized void onClick() {
-        this.actionButton.setEnabled(false);
+        this.startStopButton.setEnabled(false);
         if (this.search == null || this.search.completedFuture().isDone()) {
-            this.actionButton.setText("Starting...");
+            this.startStopButton.setText("Starting...");
             System.out.println("Starting search for mode " + this.mode);
             int size = this.mode.size();
             byte[] pattern = new byte[size * size];
@@ -121,7 +120,7 @@ public class BedrockFrame extends JFrame {
             this.search.start(this.threads);
 
             new Thread(() -> {
-                this.actionButton.setEnabled(true);
+                this.startStopButton.setEnabled(true);
 
                 long iterations = 0L;
                 double[] speeds = new double[150]; //15 seconds
@@ -141,7 +140,7 @@ public class BedrockFrame extends JFrame {
                         speeds[0] = (double) processed * TimeUnit.SECONDS.toNanos(1L) / (double) timeDelta;
                     }
 
-                    this.actionButton.setText("Stop");
+                    this.startStopButton.setText("Stop");
                     this.scannedCount.setText(String.format(
                             "%s chunks (%s/s) - %s blocks from spawn",
                             NUMBER_FORMAT.format(processedChunks),
@@ -150,12 +149,12 @@ public class BedrockFrame extends JFrame {
                     PorkUtil.sleep(100L);
                 }
 
-                this.actionButton.setText("Start");
+                this.startStopButton.setText("Start");
             }, "GUI updater worker").start();
         } else {
             this.search.completedFuture().cancel(true);
-            this.actionButton.setText("Start");
-            this.actionButton.setEnabled(true);
+            this.startStopButton.setText("Start");
+            this.startStopButton.setEnabled(true);
         }
     }
 
@@ -170,7 +169,7 @@ public class BedrockFrame extends JFrame {
             }
         }
 
-        if (true)   {
+        if (DEBUG)   {
             switch (this.mode)  {
                 case FULL: {
                     long state = seedBedrock(123, -456);
@@ -224,21 +223,39 @@ public class BedrockFrame extends JFrame {
     private void setupUI() {
         this.contentPane = new JPanel();
         this.contentPane.setLayout(new BorderLayout(0, 0));
-        this.footer = new JPanel();
-        this.footer.setLayout(new BorderLayout(0, 0));
-        this.contentPane.add(this.footer, BorderLayout.SOUTH);
+
+        JPanel footer = new JPanel();
+        footer.setLayout(new BorderLayout(0, 0));
+        this.contentPane.add(footer, BorderLayout.SOUTH);
+
         this.scannedCount = new JLabel();
         this.scannedCount.setText("0 chunks scanned");
-        this.footer.add(this.scannedCount, BorderLayout.CENTER);
-        this.actionButton = new JButton();
-        this.actionButton.setText("Start");
-        this.footer.add(this.actionButton, BorderLayout.EAST);
+        footer.add(this.scannedCount, BorderLayout.SOUTH);
+        this.startStopButton = new JButton();
+        this.startStopButton.setText("Start");
+        footer.add(this.startStopButton, BorderLayout.CENTER);
+
         JButton optionsButton = new JButton();
         optionsButton.setText("Options");
         optionsButton.addActionListener(e -> new BedrockOptionsDialog(BedrockFrame.this));
-        this.footer.add(optionsButton, BorderLayout.WEST);
+        footer.add(optionsButton, BorderLayout.WEST);
+
+        JButton clearButton = new JButton();
+        clearButton.setText("Clear input");
+        clearButton.addActionListener(e -> {
+            for (TriStateCheckBox[] col : this.boxes)   {
+                for (TriStateCheckBox box : col)    {
+                    box.setSelectionState(0);
+                }
+            }
+            this.revalidate();
+            this.repaint();
+        });
+        footer.add(clearButton, BorderLayout.EAST);
+
         this.content = new JPanel();
         this.contentPane.add(this.content, BorderLayout.CENTER);
+
         this.mode = SearchMode.FULL;
         this.rotation = Rotation.NORTH;
         this.refreshTable();

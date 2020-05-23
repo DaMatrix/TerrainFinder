@@ -33,6 +33,8 @@ import static net.daporkchop.lib.common.math.PMath.*;
 @UtilityClass
 public class Constants {
     public static final boolean ALLOW_WILDCARDS = Boolean.parseBoolean(System.getProperty("bedrock.wildcard", "true"));
+    public static final boolean DEBUG = Boolean.parseBoolean(System.getProperty("bedrock.debug", "false"));
+
     public static final int WILDCARD = 2;
 
     public static final int TILE_SIZE = 8; //the size of a tile in chunks
