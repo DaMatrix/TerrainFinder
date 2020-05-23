@@ -34,7 +34,7 @@ import static net.daporkchop.bedrock.util.Constants.*;
 //TODO: doesn't work
 @SuppressWarnings("Duplicates")
 public class BedrockAnyScanner implements TileScanner {
-    private static final ThreadLocal<byte[]> CACHE = ThreadLocal.withInitial(() -> new byte[256 * 3 * 3]);
+    private static final ThreadLocal<byte[]> CACHE = ThreadLocal.withInitial(() -> new byte[256 * (TILE_SIZE + 1) * (TILE_SIZE + 1)]);
 
     protected final byte[][] patterns;
 
@@ -50,98 +50,44 @@ public class BedrockAnyScanner implements TileScanner {
 
         final byte[] cache = CACHE.get();
 
-        for (int subX = 0; subX < TILE_SIZE; subX++) {
-            for (int subZ = 0; subZ < TILE_SIZE; subZ++) {
-                //generate chunk data
-                /*for (int relX = -1; relX <= 1; relX++) {
-                    for (int relZ = -1; relZ <= 1; relZ++) {
-                        //generate chunk data
-                        long state = seedBedrock(((tileX << TILE_SHIFT) | subX) + relX, ((tileZ << TILE_SHIFT) | subZ) + relZ);
-                        for (int x = 0; x < 16; x++) {
-                            int i = (16 * (relX + 1) + x) * 48 + (relZ + 1) * 16;
-                            for (int z = 0; z < 16; z++) {
-                                cache[(16 * (relX + 1) + x) * 48 + ((relZ + 1) * 16 + z)] = (byte) flagBedrock(state);
-                                state = updateBedrock(state);
-                            }
+        //generate chunk data for entire area
+        for (int subX = 0; subX <= TILE_SIZE; subX++) {
+            for (int subZ = 0; subZ <= TILE_SIZE; subZ++) {
+                long state = seedBedrock((tileX << TILE_SHIFT) + subX, (tileZ << TILE_SHIFT) + subZ);
+                for (int x = 0; x < 16; x++) {
+                    for (int z = 0; z < 16; z++) {
+                        if (4 <= (state >> 17) % 5) {
+                            cache[(subX * 16 + x) * (TILE_SIZE + 1) * 16 + subZ * 16 + z] = 1;
+                        } else {
+                            cache[(subX * 16 + x) * (TILE_SIZE + 1) * 16 + subZ * 16 + z] = 0;
                         }
+                        state = updateBedrock(state);
                     }
                 }
+            }
+        }
 
-                //do search
-                PATTERN:
-                for (int patternIndex = 0; patternIndex < numPatterns; patternIndex++) {
-                    byte[] pattern = patterns[patternIndex];
-
-                    for (int offsetX = 0; offsetX <= 40; offsetX++) {
-                        OFFSET:
-                        for (int offsetZ = 0; offsetZ <= 40; offsetZ++) {
-                            for (int x = 0; x < 8; x++) {
-                                for (int z = 0; z < 8; z++) {
-                                    byte v = pattern[(x << 3) | z];
-                                    if ((!ALLOW_WILDCARDS || v != WILDCARD) && v != cache[((offsetX + x) * 48) + (offsetZ + z)]) {
-                                        continue OFFSET;
-                                    }
-                                }
-                            }
-
-                            //if we've gotten this far, a match has been found
-                            bits |= 1L << ((subX << TILE_SHIFT) | subZ);
-                            //don't break because we want to check other chunks in the same tile
-                            break PATTERN;
+        //do search
+        for (int patternIndex = 0; patternIndex < numPatterns; patternIndex++) {
+            byte[] pattern = patterns[patternIndex];
+            for (int subX = 0; subX <= (TILE_SIZE + 1) * 16 - 8; subX++) {
+                for (int subZ = 0; subZ <= (TILE_SIZE + 1) * 16 - 8; subZ++) {
+                    boolean wrong = false;
+                    for (int x = 0; x < 8 && !wrong; x++) {
+                        for (int z = 0; z < 8 && !wrong; z++) {
+                            byte v = pattern[(x << 3) | z];
+                            wrong |= (!ALLOW_WILDCARDS || v != WILDCARD) && v != cache[(subX + x) * (TILE_SIZE + 1) * 16 + (subZ + z)];
                         }
                     }
-                }*/
-                for (int patternIndex = 0; patternIndex < numPatterns; patternIndex++) {
-                    byte[] pattern = patterns[patternIndex];
-                    if (this.check(pattern, (tileX << TILE_SHIFT) + subX, (tileZ << TILE_SHIFT) + subZ)) {
-                        bits |= 1L << ((subX << TILE_SHIFT) | subZ);
+
+                    if (!wrong) {
+                        //if we've gotten this far, a match has been found
+                        bits |= 1L << (((subX >> 4) << TILE_SHIFT) | (subZ >> 4));
+                        System.out.println("a");
                     }
                 }
             }
         }
         return bits;
-    }
-
-    public boolean check(byte[] pattern, int chunkX, int chunkZ) {
-        final byte[] cache = CACHE.get();
-
-        for (int i = -1; i <= 1; i++) {
-            for (int j = -1; j <= 1; j++) {
-                int cx = chunkX + j;
-                int cz = chunkZ + i;
-
-                long seed = seedBedrock(cx, cz);
-                for (int a = 0; a < 16; ++a) {
-                    for (int b = 0; b < 16; ++b) {
-                        if (4 <= (seed >> 17) % 5) {
-                            cache[(16 * (i + 1) + a) * 48 + (16 * (j + 1) + b)] = 1;
-                        } else {
-                            cache[(16 * (i + 1) + a) * 48 + (16 * (j + 1) + b)] = 0;
-                        }
-
-                        seed = updateBedrock(seed);
-                    }
-                }
-            }
-        }
-
-        boolean match;
-        for (int m = 0; m <= 48 - 8; m++) {
-            for (int n = 0; n <= 48 - 8; n++) {
-                match = true;
-                for (int i = 0; i < 8 && match; i++) {
-                    for (int j = 0; j < 8 && match; j++) {
-                        if (pattern[i * 8 + j] != cache[(m + i) * 48 + (n + j)]) {
-                            match = false;
-                        }
-                    }
-                }
-                if (match) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 }

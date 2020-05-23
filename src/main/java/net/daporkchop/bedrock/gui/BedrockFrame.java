@@ -256,8 +256,8 @@ public class BedrockFrame extends JFrame {
         this.content = new JPanel();
         this.contentPane.add(this.content, BorderLayout.CENTER);
 
-        this.mode = SearchMode.FULL;
-        this.rotation = Rotation.NORTH;
+        this.mode = SearchMode.ANY;
+        this.rotation = Rotation.ANY;
         this.refreshTable();
     }
 }

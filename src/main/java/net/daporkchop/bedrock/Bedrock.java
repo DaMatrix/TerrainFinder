@@ -21,12 +21,23 @@
 package net.daporkchop.bedrock;
 
 import net.daporkchop.bedrock.gui.BedrockFrame;
+import net.daporkchop.bedrock.util.Constants;
 
 /**
  * @author DaPorkchop_
  */
 public class Bedrock {
     public static void main(String[] args) {
+        if (false)   {
+            byte[] chunk = new byte[256];
+            Constants.fullChunkBedrock(chunk, -98, 76);
+            for (int x = 0; x < 16; x++)    {
+                for (int z = 0; z < 16; z++)    {
+                    System.out.print(chunk[x * 16 + z] == 0 ? ' ' : '#');
+                }
+                System.out.println();
+            }
+        }
         new BedrockFrame();
     }
 }
