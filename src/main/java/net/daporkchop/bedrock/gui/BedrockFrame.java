@@ -197,7 +197,7 @@ public class BedrockFrame extends JFrame {
                     }
                 }
                 break;
-                /*case ANY: {
+                case ANY: {
                     int[] grid = {0,0,0,0,0,0,0,0,
                             0,0,0,1,0,0,0,0,
                             0,1,0,0,0,0,0,0,
@@ -212,7 +212,7 @@ public class BedrockFrame extends JFrame {
                         }
                     }
                 }
-                break;*/
+                break;
             }
         }
 

@@ -53,7 +53,7 @@ public class BedrockAnyScanner implements TileScanner {
         for (int subX = 0; subX < TILE_SIZE; subX++) {
             for (int subZ = 0; subZ < TILE_SIZE; subZ++) {
                 //generate chunk data
-                for (int relX = -1; relX <= 1; relX++) {
+                /*for (int relX = -1; relX <= 1; relX++) {
                     for (int relZ = -1; relZ <= 1; relZ++) {
                         //generate chunk data
                         long state = seedBedrock(((tileX << TILE_SHIFT) | subX) + relX, ((tileZ << TILE_SHIFT) | subZ) + relZ);
@@ -90,9 +90,58 @@ public class BedrockAnyScanner implements TileScanner {
                             break PATTERN;
                         }
                     }
+                }*/
+                for (int patternIndex = 0; patternIndex < numPatterns; patternIndex++) {
+                    byte[] pattern = patterns[patternIndex];
+                    if (this.check(pattern, (tileX << TILE_SHIFT) + subX, (tileZ << TILE_SHIFT) + subZ)) {
+                        bits |= 1L << ((subX << TILE_SHIFT) | subZ);
+                    }
                 }
             }
         }
         return bits;
+    }
+
+    public boolean check(byte[] pattern, int chunkX, int chunkZ) {
+        final byte[] cache = CACHE.get();
+
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                int cx = chunkX + j;
+                int cz = chunkZ + i;
+
+                long seed = seedBedrock(cx, cz);
+                for (int a = 0; a < 16; ++a) {
+                    for (int b = 0; b < 16; ++b) {
+                        if (4 <= (seed >> 17) % 5) {
+                            cache[(16 * (i + 1) + a) * 48 + (16 * (j + 1) + b)] = 1;
+                        } else {
+                            cache[(16 * (i + 1) + a) * 48 + (16 * (j + 1) + b)] = 0;
+                        }
+
+                        seed = updateBedrock(seed);
+                    }
+                }
+            }
+        }
+
+        boolean match;
+        for (int m = 0; m <= 48 - 8; m++) {
+            for (int n = 0; n <= 48 - 8; n++) {
+                match = true;
+                for (int i = 0; i < 8 && match; i++) {
+                    for (int j = 0; j < 8 && match; j++) {
+                        if (pattern[i * 8 + j] != cache[(m + i) * 48 + (n + j)]) {
+                            match = false;
+                        }
+                    }
+                }
+                if (match) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }
