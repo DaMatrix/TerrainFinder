@@ -26,7 +26,6 @@ import net.daporkchop.bedrock.util.Constants;
 import net.daporkchop.bedrock.util.Rotation;
 import net.daporkchop.lib.common.system.OperatingSystem;
 import net.daporkchop.lib.common.system.PlatformInfo;
-import net.daporkchop.lib.common.util.PArrays;
 import net.daporkchop.lib.common.util.PorkUtil;
 
 import javax.swing.JButton;
@@ -44,6 +43,7 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.DoubleStream;
 
+import static java.lang.Math.*;
 import static net.daporkchop.bedrock.util.Constants.*;
 
 public class BedrockFrame extends JFrame {
@@ -130,9 +130,10 @@ public class BedrockFrame extends JFrame {
 
                 while (!this.search.completedFuture().isDone()) {
                     long now = System.nanoTime();
-                    long processedNow = this.search.processed() * TILE_SIZE * TILE_SIZE;
-                    long processed = processedNow - lastProcessed;
-                    lastProcessed = processedNow;
+                    long processedTiles = this.search.processed();
+                    long processedChunks = processedTiles * TILE_SIZE * TILE_SIZE;
+                    long processed = processedChunks - lastProcessed;
+                    lastProcessed = processedChunks;
                     long timeDelta = now - lastTime;
                     lastTime = now;
                     System.arraycopy(speeds, 0, speeds, 1, speeds.length - 1);
@@ -143,9 +144,9 @@ public class BedrockFrame extends JFrame {
                     this.actionButton.setText("Stop");
                     this.scannedCount.setText(String.format(
                             "%s chunks (%s/s) - %s blocks from spawn",
-                            NUMBER_FORMAT.format(processedNow),
+                            NUMBER_FORMAT.format(processedChunks),
                             NUMBER_FORMAT.format(DoubleStream.of(speeds).sum() / (double) speeds.length),
-                            NUMBER_FORMAT.format(Math.max(extractX(processedNow), extractZ(processedNow)))));
+                            NUMBER_FORMAT.format(max(abs(extractX(processedTiles)), abs(extractZ(processedTiles))) << (TILE_SHIFT + 4))));
                     PorkUtil.sleep(100L);
                 }
 
